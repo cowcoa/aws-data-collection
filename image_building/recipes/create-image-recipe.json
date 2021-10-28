@@ -1,0 +1,11 @@
+{
+    "name": "BB Ubuntu Image recipe3",
+    "description": "Hello World image recipe for Linux.",
+	  "parentImage": "ami-0d5d1a3aa3516231f",
+    "semanticVersion": "1.0.0",
+    "additionalInstanceConfiguration": {
+	    "systemsManagerAgent": {
+	     	"uninstallAfterBuild": true
+	    }
+    }
+}

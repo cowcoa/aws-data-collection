@@ -1,0 +1,48 @@
+# Install fluent-bit
+name: Install_FluentBit
+description: Install fluent-bit and update config file on Amazon Linux 2.
+schemaVersion: 1.0
+phases:
+  - 
+    name: build
+    steps:
+      - 
+        name: UpdateOS
+        action: UpdateOS
+      -
+        name: GetRepoFile
+        action: S3Download
+        inputs:
+          - source: s3://rg-data-stream-deployment-us-west-2/image-builder/components/fluentbit/td-agent-bit.repo
+            destination: /tmp/td-agent-bit.repo
+      -
+        name: EnableRepoFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetRepoFile.inputs[0].destination }} /etc/yum.repos.d/'
+      -
+        name: Install
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo yum install -y td-agent-bit'
+      -
+        name: GetConfigFile
+        action: S3Download
+        inputs:
+          - source: s3://rg-data-stream-deployment-us-west-2/image-builder/components/fluentbit/td-agent-bit.conf
+            destination: /tmp/td-agent-bit.conf
+      -
+        name: EnableConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetConfigFile.inputs[0].destination }} /etc/td-agent-bit/'
+      -
+        name: StartOnBoot
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo systemctl enable td-agent-bit'
+# Document End

@@ -1,0 +1,9 @@
+{
+    "name": "MyExampleInfrastructure2",
+    "description": "An example that will retain instances of failed builds",
+    "instanceTypes": [
+        "m5.large"
+    ],
+    "instanceProfileName": "EC2InstanceProfileForImageBuilder",
+    "terminateInstanceOnFailure": false
+}
