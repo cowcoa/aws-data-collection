@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Analyze videos from different sites and tag these videos.
+Parameters:
+  Prefix:
+    Default: 'poc'
+    Type: String
+    Description: >
+      Resource name in this template should be prefixed with this word
+  VpcStack:
+    Default: stack-vpc
+    Type: String
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+  ImagePipelineStack:
+    Default: stack-image-builder
+    Type: String
+    Description: >
+      Stack name of Image Builder.
+  FluentBitHTTPPort:
+    Default: 3891
+    Type: Number
+    Description: >
+      Stack name of Image Builder.
+  KinesisStreamName:
+    Default: stream
+    Type: String
+    Description: >
+      Stack name of Image Builder.
+  ASGMinCapacity:
+    Default: 0
+    Type: Number
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+  ASGMaxCapacity:
+    Default: 0
+    Type: Number
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+  ASGDesiredCapacity:
+    Default: 0
+    Type: Number
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+Resources:
+  FluentBitASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 1
+        MinInstancesInService: 1
+    Properties:
+      AutoScalingGroupName: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      MinSize: !Ref ASGMinCapacity
+      MaxSize: !Ref ASGMaxCapacity
+      DesiredCapacity: !Ref ASGDesiredCapacity
+      Cooldown: 240
+      HealthCheckGracePeriod: 180
+      HealthCheckType: 'ELB'
+      TerminationPolicies:
+        - 'OldestLaunchTemplate'
+      VPCZoneIdentifier:
+        - Fn::ImportValue:
+            !Sub '${VpcStack}-SubnetC'
+        - Fn::ImportValue:
+            !Sub '${VpcStack}-SubnetD'
+      TargetGroupARNs: 
+        - !Ref FluentBitTargetGroup
+      LaunchTemplate:
+        LaunchTemplateId:
+          Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitLT'
+        Version:
+          Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitLTLatestVersion'
+  FluentBitASGPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref FluentBitASG
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60
+  FluentBitTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: 'rg-MyTargets'
+      VpcId: 
+        Fn::ImportValue: !Sub '${VpcStack}-Vpc'
+      HealthCheckEnabled: true
+      HealthCheckPath: '/api/v1/health'
+      HealthCheckPort: 2020
+      HealthCheckProtocol: 'HTTP'
+      TargetType: 'instance'
+      Protocol: 'TCP'
+      Port: !Ref FluentBitHTTPPort
+  MyNLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      Name: 'rg-test-nlb'
+      IpAddressType: 'ipv4'
+      Scheme: 'internet-facing'
+      Subnets:
+        - Fn::ImportValue:
+            !Sub '${VpcStack}-SubnetA'
+        - Fn::ImportValue:
+            !Sub '${VpcStack}-SubnetB'
+      Type: 'network'
+  HTTPlistener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: "forward"
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref FluentBitTargetGroup
+      LoadBalancerArn: !Ref MyNLB
+      Port: 8080
+      Protocol: "TCP"
+  MyStream: 
+      Type: AWS::Kinesis::Stream 
+      Properties: 
+          Name: !Ref KinesisStreamName 
+          RetentionPeriodHours: 24
+          ShardCount: 1

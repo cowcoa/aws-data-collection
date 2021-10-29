@@ -1,58 +1,60 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  Analyze videos from different sites and tag these videos.
+  Image Builder pipeline used to build Fluent Bit pre-installed AMI.
 Parameters:
   Prefix:
     Default: 'poc'
     Type: String
     Description: >
-      Resource name in this template should be prefixed with this word
+      Resource name in this template should be prefixed with this word.
   DeploymentBucket:
-    Description: >
-      S3 bucket holding the video files downloaded from video websites.
+    Default: 'deployment-bucket'
     Type: String
-    MinLength: 8
-    MaxLength: 64
-    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
-    Default: rg-data-stream-deployment-us-west-2
+    Description: >
+      S3 bucket used to deploy this template.
   ComponentDocUri:
-    Description: >
-      S3 bucket holding the video files downloaded from video websites.
+    Default: 's3://deployment-bucket/component.yaml'
     Type: String
-    MinLength: 16
-    MaxLength: 128
-    Default: s3://deployment-bucket/component.yaml
+    Description: >
+      Image Builder AWSTOE component document.
   ComponentVersion:
-    Description: >
-      S3 bucket holding the video files downloaded from video websites.
+    Default: '1.0.0'
     Type: String
-    MinLength: 5
-    MaxLength: 8
-    AllowedPattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
-    Default: 1.0.0
+    Description: >
+      Image Builder AWSTOE component version.
   ImageRecipeParentAmiId:
-    Default: ami-12345
+    Default: 'ami-12345'
     Type: String
     Description: >
-      S3 bucket holding the video files downloaded from video websites.
+      Base AMI of this building target.
   ImageRecipeVersion:
     Default: 1.0.0
     Type: String
     Description: >
       Image Builder ImageRecipe version.
-  VpcStackName:
-    Default: stack-vpc
+  VpcStack:
+    Default: 'stack-vpc'
     Type: String
     Description: >
       Stack name of VPC used to deploy the following infrastructure.
   FluentBitInstanceType:
-    Default: t3.small
+    Default: 't3.small'
     Type: String
     Description: >
       EC2 instance type used to run fluentbit.
+  FluentBitHttpPort:
+    Default: 3891
+    Type: Number
+    Description: >
+      Fluent Bit HTTP input plugin's listen port.
+  FluentBitHealthCheckPort:
+    Default: 2020
+    Type: Number
+    Description: >
+      Fluent Bit HTTP server port.
 Resources:
   IBEC2InstanceProfileRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       RoleName: !Join ['-', [!Ref Prefix, 'EC2InstanceProfileForImageBuilder']]
       Description: >
@@ -73,7 +75,7 @@ Resources:
         - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
         - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
   IBEC2InstanceProfile: 
-      Type: "AWS::IAM::InstanceProfile"
+      Type: AWS::IAM::InstanceProfile
       Properties: 
         Path: "/"
         Roles: 
@@ -88,7 +90,7 @@ Resources:
       Uri: !Ref ComponentDocUri
       Version: !Ref ComponentVersion
   FluentBitImageRecipe:
-    Type: 'AWS::ImageBuilder::ImageRecipe'
+    Type: AWS::ImageBuilder::ImageRecipe
     Properties:
       Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
       Description: >
@@ -105,21 +107,21 @@ Resources:
 #            VolumeType: "gp2"
 #            VolumeSize: 100
   InfraConfig:
-      Type: 'AWS::ImageBuilder::InfrastructureConfiguration'
-      Properties:
-        Name: !Join ['-', [!Ref Prefix, 'common']]
-        InstanceProfileName: !Ref IBEC2InstanceProfile
-        Description: >
-          'Common infrastructure configure used to build AMI.'
-        InstanceTypes:
-          - 'm5.large'
-        Logging:
-          S3Logs:
-            S3BucketName: !Ref DeploymentBucket
-            S3KeyPrefix: 'image-builder/logs'
-        TerminateInstanceOnFailure: true
+    Type: AWS::ImageBuilder::InfrastructureConfiguration
+    Properties:
+      Name: !Join ['-', [!Ref Prefix, 'common']]
+      InstanceProfileName: !Ref IBEC2InstanceProfile
+      Description: >
+        'Common infrastructure configure used to build AMI.'
+      InstanceTypes:
+        - 'm5.large'
+      Logging:
+        S3Logs:
+          S3BucketName: !Ref DeploymentBucket
+          S3KeyPrefix: 'image-builder/logs'
+      TerminateInstanceOnFailure: true
   FluentBitDistConfig:
-    Type: 'AWS::ImageBuilder::DistributionConfiguration'
+    Type: AWS::ImageBuilder::DistributionConfiguration
     Properties:
       Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
       Description: >
@@ -130,17 +132,8 @@ Resources:
             Name: !Join ['-', [!Ref Prefix, 'fluentbit - {{ imagebuilder:buildDate }}']] 
             Description: >
               'AMI with Fluent Bit(and corresponding config) pre-installed.'
-#  FluentBitImagePipeline:
-#      Type: 'AWS::ImageBuilder::ImagePipeline'
-#      Properties:
-#        Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
-#        Description: 'description'
-#        ImageRecipeArn: !Ref FluentBitImageRecipe
-#        InfrastructureConfigurationArn: !Ref InfraConfig
-#        DistributionConfigurationArn: !Ref FluentBitDistConfig
-#        EnhancedImageMetadataEnabled: True
   FluentBitImage:
-      Type: 'AWS::ImageBuilder::Image'
+      Type: AWS::ImageBuilder::Image
       Properties:
         ImageRecipeArn: !Ref FluentBitImageRecipe
         InfrastructureConfigurationArn: !Ref InfraConfig
@@ -148,7 +141,7 @@ Resources:
         EnhancedImageMetadataEnabled: True
 #-----------------------------------------------
   FluentBitEC2InstanceProfileRole:
-    Type: 'AWS::IAM::Role'
+    Type: AWS::IAM::Role
     Properties:
       RoleName: !Join ['-', [!Ref Prefix, 'FluentBitEC2InstanceProfileRole']]
       Description: >
@@ -172,9 +165,27 @@ Resources:
         Path: "/"
         Roles: 
           - !Ref FluentBitEC2InstanceProfileRole
+  FluentBitInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      GroupDescription: 'Enable HTTP access on fluentbit input listen port.'
+      VpcId:
+        Fn::ImportValue: !Sub '${VpcStack}-Vpc'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref FluentBitHttpPort
+          ToPort: !Ref FluentBitHttpPort
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: !Ref FluentBitHealthCheckPort
+          ToPort: !Ref FluentBitHealthCheckPort
+          CidrIp: 0.0.0.0/0
   FluentBitLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
-    DependsOn: FluentBitImage
+    DependsOn:
+      - FluentBitImage
+      - FluentBitInstanceSG
     Properties:
       LaunchTemplateName: !Join ['-', [!Ref Prefix, 'fluentbit']]
       LaunchTemplateData:
@@ -183,8 +194,7 @@ Resources:
         ImageId: !GetAtt FluentBitImage.ImageId
         InstanceType: !Ref FluentBitInstanceType
         SecurityGroupIds: 
-          - Fn::ImportValue:
-              !Sub '${VpcStackName}-FluentBitSG'
+          - !GetAtt FluentBitInstanceSG.GroupId
         BlockDeviceMappings:
           - DeviceName: "/dev/xvda"
             Ebs:
@@ -192,3 +202,16 @@ Resources:
               Encrypted: false
               VolumeType: "gp2"
               VolumeSize: 100
+Outputs:
+  LaunchTemplateValue:
+    Description: >
+      Fluent Bit LaunchTemplate ID.
+    Value: !Ref FluentBitLaunchTemplate
+    Export:
+      Name: !Sub '${AWS::StackName}-FluentBitLT'
+  LaunchTemplateLatestVersionNumberValue:
+    Description: >
+      Fluent Bit LaunchTemplate latest version number.
+    Value: !GetAtt FluentBitLaunchTemplate.LatestVersionNumber
+    Export:
+      Name: !Sub '${AWS::StackName}-FluentBitLTLatestVersion'

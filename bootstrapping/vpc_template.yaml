@@ -1,17 +1,14 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  VPC for AWS Data Collection. SubnetA/B for public access, SubnetC/D for private.
+  VPC for AWS Data Collection. 
+  Subnet A/B for public access, Subnet C/D for private.
+  Subnet A and C in the same AZ. Subnet B and D in the same AZ.
 Parameters:
   Prefix:
     Default: 'poc'
     Type: String
     Description: >
       Resource name in this template should be prefixed with this word.
-  ListenPort:
-    Default: 7891
-    Type: Number
-    Description: >
-      Fluent Bit HTTP input plugin's listen port.
   VpcBlock:
     Default: '172.19.0.0/16'
     Type: String
@@ -24,6 +21,9 @@ Resources:
       CidrBlock: !Ref VpcBlock
       EnableDnsSupport: true
       EnableDnsHostnames: true
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-vpc']]
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
@@ -45,17 +45,6 @@ Resources:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
-  FluentBitInstanceSG:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: !Join ['-', [!Ref Prefix, 'fluentbit-instance-sg']]
-      GroupDescription: Enable HTTP access on fluentbit input listen port.
-      VpcId: !Ref Vpc
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: !Ref ListenPort
-          ToPort: !Ref ListenPort
-          CidrIp: 0.0.0.0/0
   VpcSubnetA:
     Type: AWS::EC2::Subnet
     Properties:
@@ -88,7 +77,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select
-        - 2
+        - 0
         - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock: !Select [ 2, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
       VpcId: !Ref Vpc
@@ -101,7 +90,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: !Select
-        - 0
+        - 1
         - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock: !Select [ 3, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
       VpcId: !Ref Vpc
@@ -136,8 +125,3 @@ Outputs:
     Value: !Ref VpcSubnetD
     Export:
       Name: !Sub '${AWS::StackName}-SubnetD'
-  FluentBitInstanceSGValue:
-    Description: The Fluent Bit EC2 instance security group ID that is associated with the VPC
-    Value: !GetAtt FluentBitInstanceSG.GroupId
-    Export:
-      Name: !Sub '${AWS::StackName}-FluentBitSG'

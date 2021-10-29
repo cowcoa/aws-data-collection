@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Analyze videos from different sites and tag these videos.
+Parameters:
+  ResourceNamePrefix:
+    Default: 'poc'
+    Type: String
+    Description: >
+      Resource name in this template should be prefixed with this word
+  ECRLambdaConsumerRepo:
+    Default: 'poc'
+    Type: String
+    Description: >
+      Resource name in this template should be prefixed with this word
+  VpcId:
+    Description: >
+      S3 bucket holding the video files downloaded from video websites.
+    Type: String
+    MinLength: 8
+    MaxLength: 64
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: rg-data-stream-deployment-us-west-2
+  MySubnets:
+    Type: CommaDelimitedList
+  VpcStackName:
+    Default: stack-vpc
+    Type: String
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+Resources:
+  myASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 1
+        MinInstancesInService: 1
+    Properties:
+      AutoScalingGroupName: "rg-test-asg"
+      MinSize: '0'
+      MaxSize: '0'
+      DesiredCapacity: '0'
+      Cooldown: 240
+      HealthCheckGracePeriod: 180
+      HealthCheckType: 'ELB'
+      TerminationPolicies:
+        - 'OldestLaunchTemplate'
+#      VPCZoneIdentifier: !Ref MySubnets
+      VPCZoneIdentifier:
+        - !Ref PicvoxGameVpcSubnetC
+        - !Ref PicvoxGameVpcSubnetD
+      TargetGroupARNs: 
+        - !Ref MyTargetGroup
+      LaunchTemplate:
+        LaunchTemplateId: !Ref MyLaunchTemplate
+        Version: !GetAtt MyLaunchTemplate.LatestVersionNumber
+  myCPUPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref myASG
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60
+  MyTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref PicvoxGameVpc
+      HealthCheckEnabled: true
+      HealthCheckPath: '/api/v1/health'
+      HealthCheckPort: 2020
+      HealthCheckProtocol: 'HTTP'
+      Name: 'rg-MyTargets'
+      TargetType: 'instance'
+      Protocol: 'TCP'
+      Port: 8888
+  MyNLB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      Name: 'rg-test-nlb'
+      IpAddressType: 'ipv4'
+      Scheme: 'internet-facing'
+#      Subnets: !Ref MySubnets
+      Subnets:
+        - !Ref PicvoxGameVpcSubnetA
+        - !Ref PicvoxGameVpcSubnetB
+      Type: 'network'
+  HTTPlistener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Properties:
+      DefaultActions:
+        - Type: "forward"
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref MyTargetGroup
+      LoadBalancerArn: !Ref MyNLB
+      Port: 80
+      Protocol: "TCP"
+  MyRepository: 
+    Type: AWS::ECR::Repository
+    Properties: 
+      RepositoryName: !Ref ECRLambdaConsumerRepo
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal: 
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
+  AnalyzeVideoRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: 'rg-lambda-kinesis-role'
+      Description: >
+        'Role for executing kinesis lambda function.'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AWSLambdaKinesisExecutionRole'
+        - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
+  ReadRecordFromKinesis:
+    Type: 'AWS::Lambda::Function'
+    DependsOn: AnalyzeVideoRole
+    Properties:
+      FunctionName: !Join ['-', [!Ref ResourceNamePrefix, 'AnalyzeVideo']]
+      Description: 'Download video from website and tag it.'
+      PackageType: 'Image'
+      MemorySize: 512
+      Code: 
+      Handler: analyze-video/index.handler
+      Role: !GetAtt AnalyzeVideoRole.Arn
+      Timeout: 30
+      Runtime: nodejs12.x
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          VIDEO_TASK_QUEUE_URL: !Ref VideoTaskQueue
+        
