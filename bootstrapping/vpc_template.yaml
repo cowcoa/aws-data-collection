@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  VPC for AWS Data Collection. SubnetA/B for public access, SubnetC/D for private.
+Parameters:
+  Prefix:
+    Default: 'poc'
+    Type: String
+    Description: >
+      Resource name in this template should be prefixed with this word.
+  ListenPort:
+    Default: 7891
+    Type: Number
+    Description: >
+      Fluent Bit HTTP input plugin's listen port.
+  VpcBlock:
+    Default: '172.19.0.0/16'
+    Type: String
+    Description: >
+      VPC's CIDR range.
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcBlock
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+  AttachInternetGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+  InternetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+  FluentBitInstanceSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Join ['-', [!Ref Prefix, 'fluentbit-instance-sg']]
+      GroupDescription: Enable HTTP access on fluentbit input listen port.
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ListenPort
+          ToPort: !Ref ListenPort
+          CidrIp: 0.0.0.0/0
+  VpcSubnetA:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [ 0, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref Vpc
+  VpcSubnetARouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VpcSubnetA
+      RouteTableId: !Ref PublicRouteTable
+  VpcSubnetB:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [ 1, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref Vpc
+  VpcSubnetBRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VpcSubnetB
+      RouteTableId: !Ref PublicRouteTable
+  VpcSubnetC:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [ 2, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
+      VpcId: !Ref Vpc
+  VpcSubnetCRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VpcSubnetC
+      RouteTableId: !Ref PrivateRouteTable
+  VpcSubnetD:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [ 3, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
+      VpcId: !Ref Vpc
+  VpcSubnetDRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref VpcSubnetD
+      RouteTableId: !Ref PrivateRouteTable
+Outputs:
+  VpcValue:
+    Description: The VPC ID.
+    Value: !Ref Vpc
+    Export:
+      Name: !Sub '${AWS::StackName}-Vpc'
+  VpcSubnetAValue:
+    Description: The first subnet ID that is associated with the VPC.
+    Value: !Ref VpcSubnetA
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetA'
+  VpcSubnetBValue:
+    Description: The second subnet ID that is associated with the VPC.
+    Value: !Ref VpcSubnetB
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetB'
+  VpcSubnetCValue:
+    Description: The third subnet ID that is associated with the VPC.
+    Value: !Ref VpcSubnetC
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetC'
+  VpcSubnetDValue:
+    Description: The fourth subnet ID that is associated with the VPC.
+    Value: !Ref VpcSubnetD
+    Export:
+      Name: !Sub '${AWS::StackName}-SubnetD'
+  FluentBitInstanceSGValue:
+    Description: The Fluent Bit EC2 instance security group ID that is associated with the VPC
+    Value: !GetAtt FluentBitInstanceSG.GroupId
+    Export:
+      Name: !Sub '${AWS::StackName}-FluentBitSG'

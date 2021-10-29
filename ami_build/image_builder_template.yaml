@@ -1,0 +1,194 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Analyze videos from different sites and tag these videos.
+Parameters:
+  Prefix:
+    Default: 'poc'
+    Type: String
+    Description: >
+      Resource name in this template should be prefixed with this word
+  DeploymentBucket:
+    Description: >
+      S3 bucket holding the video files downloaded from video websites.
+    Type: String
+    MinLength: 8
+    MaxLength: 64
+    AllowedPattern: '^[a-zA-Z][-a-zA-Z0-9]*$'
+    Default: rg-data-stream-deployment-us-west-2
+  ComponentDocUri:
+    Description: >
+      S3 bucket holding the video files downloaded from video websites.
+    Type: String
+    MinLength: 16
+    MaxLength: 128
+    Default: s3://deployment-bucket/component.yaml
+  ComponentVersion:
+    Description: >
+      S3 bucket holding the video files downloaded from video websites.
+    Type: String
+    MinLength: 5
+    MaxLength: 8
+    AllowedPattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    Default: 1.0.0
+  ImageRecipeParentAmiId:
+    Default: ami-12345
+    Type: String
+    Description: >
+      S3 bucket holding the video files downloaded from video websites.
+  ImageRecipeVersion:
+    Default: 1.0.0
+    Type: String
+    Description: >
+      Image Builder ImageRecipe version.
+  VpcStackName:
+    Default: stack-vpc
+    Type: String
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+  FluentBitInstanceType:
+    Default: t3.small
+    Type: String
+    Description: >
+      EC2 instance type used to run fluentbit.
+Resources:
+  IBEC2InstanceProfileRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Join ['-', [!Ref Prefix, 'EC2InstanceProfileForImageBuilder']]
+      Description: >
+        'Role used to run AWSTOE of Image Builder.'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilder'
+        - 'arn:aws:iam::aws:policy/EC2InstanceProfileForImageBuilderECRContainerBuilds'
+        - 'arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+  IBEC2InstanceProfile: 
+      Type: "AWS::IAM::InstanceProfile"
+      Properties: 
+        Path: "/"
+        Roles: 
+          - !Ref IBEC2InstanceProfileRole
+  FluentBitComponent:
+    Type: AWS::ImageBuilder::Component
+    Properties: 
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      Description: 'Install fluent-bit.'
+      ChangeDescription: 'Initial version.'
+      Platform: 'Linux'
+      Uri: !Ref ComponentDocUri
+      Version: !Ref ComponentVersion
+  FluentBitImageRecipe:
+    Type: 'AWS::ImageBuilder::ImageRecipe'
+    Properties:
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      Description: >
+        'Used to orchestrate buiding components for target AMI.'
+      Version: !Ref ImageRecipeVersion
+      ParentImage: !Ref ImageRecipeParentAmiId
+      Components:
+        - ComponentArn: !Ref FluentBitComponent
+#      BlockDeviceMappings:
+#        - DeviceName: "/dev/xvda"
+#          Ebs:
+#            DeleteOnTermination: true
+#            Encrypted: false
+#            VolumeType: "gp2"
+#            VolumeSize: 100
+  InfraConfig:
+      Type: 'AWS::ImageBuilder::InfrastructureConfiguration'
+      Properties:
+        Name: !Join ['-', [!Ref Prefix, 'common']]
+        InstanceProfileName: !Ref IBEC2InstanceProfile
+        Description: >
+          'Common infrastructure configure used to build AMI.'
+        InstanceTypes:
+          - 'm5.large'
+        Logging:
+          S3Logs:
+            S3BucketName: !Ref DeploymentBucket
+            S3KeyPrefix: 'image-builder/logs'
+        TerminateInstanceOnFailure: true
+  FluentBitDistConfig:
+    Type: 'AWS::ImageBuilder::DistributionConfiguration'
+    Properties:
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      Description: >
+        'Configure AMI distribution options.'
+      Distributions:
+        - Region: !Ref AWS::Region
+          AmiDistributionConfiguration:
+            Name: !Join ['-', [!Ref Prefix, 'fluentbit - {{ imagebuilder:buildDate }}']] 
+            Description: >
+              'AMI with Fluent Bit(and corresponding config) pre-installed.'
+#  FluentBitImagePipeline:
+#      Type: 'AWS::ImageBuilder::ImagePipeline'
+#      Properties:
+#        Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
+#        Description: 'description'
+#        ImageRecipeArn: !Ref FluentBitImageRecipe
+#        InfrastructureConfigurationArn: !Ref InfraConfig
+#        DistributionConfigurationArn: !Ref FluentBitDistConfig
+#        EnhancedImageMetadataEnabled: True
+  FluentBitImage:
+      Type: 'AWS::ImageBuilder::Image'
+      Properties:
+        ImageRecipeArn: !Ref FluentBitImageRecipe
+        InfrastructureConfigurationArn: !Ref InfraConfig
+        DistributionConfigurationArn: !Ref FluentBitDistConfig
+        EnhancedImageMetadataEnabled: True
+#-----------------------------------------------
+  FluentBitEC2InstanceProfileRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Join ['-', [!Ref Prefix, 'FluentBitEC2InstanceProfileRole']]
+      Description: >
+        'Role used to run Fluent Bit and forward data to Kinesis Stream.'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonKinesisFullAccess'
+  FluentBitEC2InstanceProfile: 
+      Type: "AWS::IAM::InstanceProfile"
+      Properties: 
+        Path: "/"
+        Roles: 
+          - !Ref FluentBitEC2InstanceProfileRole
+  FluentBitLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    DependsOn: FluentBitImage
+    Properties:
+      LaunchTemplateName: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      LaunchTemplateData:
+        IamInstanceProfile: 
+          Name: !Ref FluentBitEC2InstanceProfile
+        ImageId: !GetAtt FluentBitImage.ImageId
+        InstanceType: !Ref FluentBitInstanceType
+        SecurityGroupIds: 
+          - Fn::ImportValue:
+              !Sub '${VpcStackName}-FluentBitSG'
+        BlockDeviceMappings:
+          - DeviceName: "/dev/xvda"
+            Ebs:
+              DeleteOnTermination: true
+              Encrypted: false
+              VolumeType: "gp2"
+              VolumeSize: 100
