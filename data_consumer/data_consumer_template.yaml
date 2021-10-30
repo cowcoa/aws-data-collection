@@ -12,6 +12,11 @@ Parameters:
     Type: String
     Description: >
       Stack name of VPC used to deploy the following infrastructure.
+  KinesisStreamName:
+    Default: stream
+    Type: String
+    Description: >
+      Stack name of Image Builder.
 Resources:
   AnalyzeVideoRole:
     Type: 'AWS::IAM::Role'
@@ -49,3 +54,24 @@ Resources:
       Timeout: 30
 #      Runtime: 'nodejs14.x'
       ReservedConcurrentExecutions: 10
+  MyEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn:
+        Fn::Join:
+          - ""
+          -
+            - "arn:aws:kinesis:"
+            -
+              Ref: "AWS::Region"
+            - ":"
+            -
+              Ref: "AWS::AccountId"
+            - ":stream/"
+            -
+              Ref: "KinesisStreamName"
+      FunctionName:
+        Fn::GetAtt:
+          - "ReadRecordFromKinesis"
+          - "Arn"
+      StartingPosition: "TRIM_HORIZON"

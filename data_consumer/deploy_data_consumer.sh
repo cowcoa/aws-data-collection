@@ -74,7 +74,8 @@ aws cloudformation create-change-set \
   --template-url https://$deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --parameters ParameterKey="Prefix",ParameterValue=$project_name \
-               ParameterKey="ImageUri",ParameterValue="$latest_image_uri"
+               ParameterKey="ImageUri",ParameterValue="$latest_image_uri" \
+               ParameterKey="KinesisStreamName",ParameterValue=$fluentbit_kinesis_stream
 
 result=$?
 
