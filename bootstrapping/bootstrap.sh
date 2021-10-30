@@ -28,4 +28,4 @@ if aws s3 ls "s3://$deployment_bucket" 2>&1 | grep -q 'NoSuchBucket'; then
     '
 fi
 
-echo 'done'
+echo 'bootstrapping done.'

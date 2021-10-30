@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  VPC for AWS Data Collection. 
+  Basic template for AWS Data Collection. 
   Subnet A/B for public access, Subnet C/D for private.
   Subnet A and C in the same AZ. Subnet B and D in the same AZ.
 Parameters:
@@ -14,6 +14,35 @@ Parameters:
     Type: String
     Description: >
       VPC's CIDR range.
+  BucketName:
+    Default: 's3-bucket'
+    Type: String
+    Description: >
+      Data records bucket.
+  ShouldCreateBucket:
+    Default: 'true'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      Flag that indicate whether the data records bucket should be created.
+  RepositoryName:
+    Default: 'ecr-repository'
+    Type: String
+    Description: >
+      Lambda consumer image repository.
+  ShouldCreateRepository:
+    Default: 'true'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      Flag that indicate whether the ecr lambda consumer repository should be created.
+Conditions:
+  CreateBucket: !Equals [!Ref ShouldCreateBucket, 'true']
+  CreateRepository: !Equals [!Ref ShouldCreateRepository, 'true']
 Resources:
   Vpc:
     Type: AWS::EC2::VPC
@@ -99,6 +128,35 @@ Resources:
     Properties:
       SubnetId: !Ref VpcSubnetD
       RouteTableId: !Ref PrivateRouteTable
+  DataRecordsBucket:
+    Type: 'AWS::S3::Bucket'
+    DeletionPolicy: Retain
+    Condition: CreateBucket
+    Properties:
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  LambdaConsumerRepo: 
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+    Condition: CreateRepository
+    Properties: 
+      RepositoryName: !Ref RepositoryName
+      RepositoryPolicyText: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: AllowPushPull
+            Effect: Allow
+            Principal: 
+              Service: 
+                - "lambda.amazonaws.com"
+            Action: 
+              - "ecr:GetDownloadUrlForLayer"
+              - "ecr:BatchGetImage"
 Outputs:
   VpcValue:
     Description: The VPC ID.

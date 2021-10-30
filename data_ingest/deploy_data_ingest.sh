@@ -1,19 +1,16 @@
 #!/bin/bash
 # Deploy/Update project on AWS by CloudFormation.
 
-pushd ./components
-source ./deploy_components.sh
-popd
 source ../bootstrapping/config.sh
 
 arg_count=$#
 script_name=$(basename $0)
 stack_action=update
 
-input_template_file="image_pipeline_template.yaml"
+input_template_file="data_ingest_template.yaml"
 output_template_file="packaged-template-output.yaml"
 
-cf_stack_name="$project_name-image-pipeline"
+cf_stack_name="$project_name-data-ingest"
 cf_change_set_name="$cf_stack_name-change-set"
 
 if test $arg_count -eq 1; then
@@ -69,14 +66,12 @@ aws cloudformation create-change-set \
   --template-url https://$deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --parameters ParameterKey="Prefix",ParameterValue=$project_name \
-               ParameterKey="DeploymentBucket",ParameterValue=$deployment_bucket \
-               ParameterKey="ComponentDocUri",ParameterValue="s3://$deployment_bucket/image-builder/components/install-fluentbit.yaml" \
-               ParameterKey="ComponentVersion",ParameterValue=$ib_component_version \
-               ParameterKey="ImageRecipeParentAmiId",ParameterValue=$amz_linux_2_ami \
-               ParameterKey="ImageRecipeVersion",ParameterValue=$ib_image_recipe_version \
                ParameterKey="BasicStack",ParameterValue="$project_name-basic" \
-               ParameterKey="FluentBitInstanceType",ParameterValue=$fluentbit_instance_type \
-               ParameterKey="FluentBitHttpPort",ParameterValue=$fluentbit_http_port
+               ParameterKey="ImagePipelineStack",ParameterValue="$project_name-image-pipeline" \
+               ParameterKey="AsgMinCapacity",ParameterValue=$asg_min_capacity \
+               ParameterKey="AsgMaxCapacity",ParameterValue=$asg_max_capacity \
+               ParameterKey="AsgDesiredCapacity",ParameterValue=$asg_desired_capacity \
+               ParameterKey="KinesisStreamName",ParameterValue=$fluentbit_kinesis_stream
 
 result=$?
 
@@ -109,15 +104,18 @@ aws cloudformation execute-change-set \
   --change-set-name $cf_change_set_name \
   --stack-name $cf_stack_name
 
+echo "Waiting for stack executing complete..."
+aws cloudformation wait \
+  stack-${stack_action}-complete \
+  --stack-name $cf_stack_name
+
 result=$?
 
 if test $result -ne 0; then
-  echo "Failed to execute change set $cf_change_set_name"
+  echo "Deleting change set..."
   aws cloudformation delete-change-set \
     --stack-name $cf_stack_name \
     --change-set-name $cf_change_set_name
-else
-  echo "It's a long-running deployment(for building AMI), please check the stack status from console..."
 fi
 
 if [ -f $output_template_file ]; then

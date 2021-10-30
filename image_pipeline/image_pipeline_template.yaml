@@ -32,7 +32,7 @@ Parameters:
     Type: String
     Description: >
       Image Builder ImageRecipe version.
-  VpcStack:
+  BasicStack:
     Default: 'stack-vpc'
     Type: String
     Description: >
@@ -168,10 +168,10 @@ Resources:
   FluentBitInstanceSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      GroupName: !Join ['-', [!Ref Prefix, 'fluentbit-sg']]
       GroupDescription: 'Enable HTTP access on fluentbit input listen port.'
       VpcId:
-        Fn::ImportValue: !Sub '${VpcStack}-Vpc'
+        Fn::ImportValue: !Sub '${BasicStack}-Vpc'
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: !Ref FluentBitHttpPort
@@ -181,6 +181,9 @@ Resources:
           FromPort: !Ref FluentBitHealthCheckPort
           ToPort: !Ref FluentBitHealthCheckPort
           CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-sg']]
   FluentBitLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     DependsOn:
@@ -202,6 +205,19 @@ Resources:
               Encrypted: false
               VolumeType: "gp2"
               VolumeSize: 100
+  FluentBitTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit-tg']]
+      VpcId: 
+        Fn::ImportValue: !Sub '${BasicStack}-Vpc'
+      HealthCheckEnabled: true
+      HealthCheckPath: '/api/v1/health'
+      HealthCheckPort: !Ref FluentBitHealthCheckPort
+      HealthCheckProtocol: 'HTTP'
+      TargetType: 'instance'
+      Protocol: 'TCP'
+      Port: !Ref FluentBitHttpPort
 Outputs:
   LaunchTemplateValue:
     Description: >
@@ -215,3 +231,9 @@ Outputs:
     Value: !GetAtt FluentBitLaunchTemplate.LatestVersionNumber
     Export:
       Name: !Sub '${AWS::StackName}-FluentBitLTLatestVersion'
+  TargetGroupValue:
+    Description: >
+      Fluent Bit NLB TargetGroup.
+    Value: !Ref FluentBitTargetGroup
+    Export:
+      Name: !Sub '${AWS::StackName}-FluentBitTargetGroup'

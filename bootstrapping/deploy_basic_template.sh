@@ -7,10 +7,10 @@ arg_count=$#
 script_name=$(basename $0)
 stack_action=update
 
-input_template_file="vpc_template.yaml"
+input_template_file="basic_template.yaml"
 output_template_file="packaged-template-output.yaml"
 
-cf_stack_name="$project_name-vpc"
+cf_stack_name="$project_name-basic"
 cf_change_set_name="$cf_stack_name-change-set"
 
 if test $arg_count -eq 1; then
@@ -58,6 +58,22 @@ aws s3api put-object \
   --key $output_template_file \
   --body $output_template_file
 
+# Check S3 data records bucket existance.
+should_create_bucket="false"
+if aws s3 ls "s3://$data_records_bucket" 2>&1 | grep -q 'NoSuchBucket'; then
+  should_create_bucket="true"
+fi
+echo "Should create s3 data records bucket: $should_create_bucket"
+
+# Check ECR repository existance.
+should_create_repository="false"
+aws ecr describe-repositories --repository-names $lambda_consumer_ecr_repo > /dev/null 2>&1
+result=$?
+if [[ ! "${result}" -eq 0 ]]; then
+    should_create_repository="true"
+fi
+echo "Should create ecr lambda consumer image repository: $should_create_repository"
+
 echo "Creating change set..."
 aws cloudformation create-change-set \
   --change-set-type ${stack_action^^} \
@@ -65,7 +81,11 @@ aws cloudformation create-change-set \
   --change-set-name $cf_change_set_name \
   --template-url https://$deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-  --parameters ParameterKey="Prefix",ParameterValue=$project_name
+  --parameters ParameterKey="Prefix",ParameterValue=$project_name \
+               ParameterKey="BucketName",ParameterValue=$data_records_bucket \
+               ParameterKey="ShouldCreateBucket",ParameterValue=$should_create_bucket \
+               ParameterKey="RepositoryName",ParameterValue=$lambda_consumer_ecr_repo \
+               ParameterKey="ShouldCreateRepository",ParameterValue=$should_create_repository
 
 result=$?
 

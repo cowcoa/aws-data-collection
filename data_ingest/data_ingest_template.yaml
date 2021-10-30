@@ -7,7 +7,7 @@ Parameters:
     Type: String
     Description: >
       Resource name in this template should be prefixed with this word
-  VpcStack:
+  BasicStack:
     Default: stack-vpc
     Type: String
     Description: >
@@ -17,33 +17,28 @@ Parameters:
     Type: String
     Description: >
       Stack name of Image Builder.
-  FluentBitHTTPPort:
-    Default: 3891
+  AsgMinCapacity:
+    Default: 0
     Type: Number
     Description: >
-      Stack name of Image Builder.
+      Stack name of VPC used to deploy the following infrastructure.
+  AsgMaxCapacity:
+    Default: 0
+    Type: Number
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+  AsgDesiredCapacity:
+    Default: 0
+    Type: Number
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
   KinesisStreamName:
     Default: stream
     Type: String
     Description: >
       Stack name of Image Builder.
-  ASGMinCapacity:
-    Default: 0
-    Type: Number
-    Description: >
-      Stack name of VPC used to deploy the following infrastructure.
-  ASGMaxCapacity:
-    Default: 0
-    Type: Number
-    Description: >
-      Stack name of VPC used to deploy the following infrastructure.
-  ASGDesiredCapacity:
-    Default: 0
-    Type: Number
-    Description: >
-      Stack name of VPC used to deploy the following infrastructure.
 Resources:
-  FluentBitASG:
+  FluentBitAsg:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:
       AutoScalingRollingUpdate:
@@ -51,9 +46,9 @@ Resources:
         MinInstancesInService: 1
     Properties:
       AutoScalingGroupName: !Join ['-', [!Ref Prefix, 'fluentbit']]
-      MinSize: !Ref ASGMinCapacity
-      MaxSize: !Ref ASGMaxCapacity
-      DesiredCapacity: !Ref ASGDesiredCapacity
+      MinSize: !Ref AsgMinCapacity
+      MaxSize: !Ref AsgMaxCapacity
+      DesiredCapacity: !Ref AsgDesiredCapacity
       Cooldown: 240
       HealthCheckGracePeriod: 180
       HealthCheckType: 'ELB'
@@ -61,38 +56,25 @@ Resources:
         - 'OldestLaunchTemplate'
       VPCZoneIdentifier:
         - Fn::ImportValue:
-            !Sub '${VpcStack}-SubnetC'
+            !Sub '${BasicStack}-SubnetC'
         - Fn::ImportValue:
-            !Sub '${VpcStack}-SubnetD'
+            !Sub '${BasicStack}-SubnetD'
       TargetGroupARNs: 
-        - !Ref FluentBitTargetGroup
+        - Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitTargetGroup'
       LaunchTemplate:
         LaunchTemplateId:
           Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitLT'
         Version:
           Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitLTLatestVersion'
-  FluentBitASGPolicy:
+  FluentBitAsgPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
-      AutoScalingGroupName: !Ref FluentBitASG
+      AutoScalingGroupName: !Ref FluentBitAsg
       PolicyType: TargetTrackingScaling
       TargetTrackingConfiguration:
         PredefinedMetricSpecification:
           PredefinedMetricType: ASGAverageCPUUtilization
         TargetValue: 60
-  FluentBitTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      Name: 'rg-MyTargets'
-      VpcId: 
-        Fn::ImportValue: !Sub '${VpcStack}-Vpc'
-      HealthCheckEnabled: true
-      HealthCheckPath: '/api/v1/health'
-      HealthCheckPort: 2020
-      HealthCheckProtocol: 'HTTP'
-      TargetType: 'instance'
-      Protocol: 'TCP'
-      Port: !Ref FluentBitHTTPPort
   MyNLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties: 
@@ -101,9 +83,9 @@ Resources:
       Scheme: 'internet-facing'
       Subnets:
         - Fn::ImportValue:
-            !Sub '${VpcStack}-SubnetA'
+            !Sub '${BasicStack}-SubnetA'
         - Fn::ImportValue:
-            !Sub '${VpcStack}-SubnetB'
+            !Sub '${BasicStack}-SubnetB'
       Type: 'network'
   HTTPlistener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
@@ -112,7 +94,8 @@ Resources:
         - Type: "forward"
           ForwardConfig:
             TargetGroups:
-              - TargetGroupArn: !Ref FluentBitTargetGroup
+              - TargetGroupArn:
+                  Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitTargetGroup'
       LoadBalancerArn: !Ref MyNLB
       Port: 8080
       Protocol: "TCP"

@@ -1,0 +1,79 @@
+# Install fluent-bit
+name: Install_FluentBit
+description: Install fluent-bit and update config file on Amazon Linux 2.
+schemaVersion: 1.0
+parameters:
+  - FluentBitRepoFile:
+      type: string
+      default: 's3://aws-dc-deployment-us-west-2/image-builder/components/fluentbit/td-agent-bit.repo'
+      description: Url of the fluent bit repo file in s3 bucket.
+  - FluentBitConfigFile:
+      type: string
+      default: 's3://aws-dc-deployment-us-west-2/image-builder/components/fluentbit/td-agent-bit.conf'
+      description: Url of the fluent bit config file in s3 bucket.
+  - FluentBitEnvFile:
+      type: string
+      default: 's3://aws-dc-deployment-us-west-2/image-builder/components/fluentbit/td-agent-bit.env'
+      description: Url of the fluent bit env file in s3 bucket.
+phases:
+  - 
+    name: build
+    steps:
+      - 
+        name: UpdateOS
+        action: UpdateOS
+      -
+        name: GetRepoFile
+        action: S3Download
+        inputs:
+          - source: '{{ FluentBitRepoFile }}'
+            destination: /tmp/td-agent-bit.repo
+      -
+        name: EnableRepoFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetRepoFile.inputs[0].destination }} /etc/yum.repos.d/'
+      -
+        name: Install
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo yum install -y td-agent-bit'
+      -
+        name: GetConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ FluentBitConfigFile }}'
+            destination: /tmp/td-agent-bit.conf
+      -
+        name: EnableConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetConfigFile.inputs[0].destination }} /etc/td-agent-bit/'
+      -
+        name: GetEnvFile
+        action: S3Download
+        inputs:
+          - source: '{{ FluentBitEnvFile }}'
+            destination: /tmp/td-agent-bit.env
+      -
+        name: EnableEnvFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetEnvFile.inputs[0].destination }} /etc/td-agent-bit/'
+      -
+        name: UpdateServiceFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - sudo sed -i 's/\[Service\]/\[Service\]\nEnvironmentFile=\/etc\/td-agent-bit\/td-agent-bit.env/' /usr/lib/systemd/system/td-agent-bit.service
+      -
+        name: StartOnBoot
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo systemctl enable td-agent-bit'
+# Document End
