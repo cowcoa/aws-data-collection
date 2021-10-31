@@ -37,6 +37,21 @@ Parameters:
     Type: String
     Description: >
       Stack name of Image Builder.
+  KinesisStreamShardCount:
+    Default: 1
+    Type: Number
+    Description: >
+      Stack name of Image Builder.
+  NlbListenerPort:
+    Default: 8080
+    Type: Number
+    Description: >
+      Stack name of Image Builder.
+  DataRecordsBucket:
+    Default: 's3-bucket'
+    Type: String
+    Description: >
+      Data records bucket.
 Resources:
   FluentBitAsg:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -87,7 +102,7 @@ Resources:
         - Fn::ImportValue:
             !Sub '${BasicStack}-SubnetB'
       Type: 'network'
-  HTTPlistener:
+  NlbListener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
       DefaultActions:
@@ -97,11 +112,49 @@ Resources:
               - TargetGroupArn:
                   Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitTargetGroup'
       LoadBalancerArn: !Ref MyNLB
-      Port: 8080
+      Port: !Ref NlbListenerPort
       Protocol: "TCP"
-  MyStream: 
+  KinesisFirehoseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join ['-', [!Ref Prefix, 'KinesisFirehoseRole']]
+      Description: >
+        'Role used to run Fluent Bit and forward data to Kinesis Stream.'
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - firehose.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+        - 'arn:aws:iam::aws:policy/AmazonKinesisFullAccess'
+  KinesisDataStream: 
       Type: AWS::Kinesis::Stream 
       Properties: 
           Name: !Ref KinesisStreamName 
           RetentionPeriodHours: 24
-          ShardCount: 1
+          ShardCount: !Ref KinesisStreamShardCount
+  Deliverystream: 
+    Type: AWS::KinesisFirehose::DeliveryStream
+    DependsOn:
+      - KinesisFirehoseRole
+      - KinesisDataStream
+    Properties:
+        DeliveryStreamName: 'my-kinesis-delivery-stream'
+        DeliveryStreamType: KinesisStreamAsSource
+        KinesisStreamSourceConfiguration: 
+          KinesisStreamARN: !GetAtt KinesisDataStream.Arn
+          RoleARN: !GetAtt KinesisFirehoseRole.Arn
+        ExtendedS3DestinationConfiguration: 
+          BucketARN: !Join [':::', ['arn:aws:s3', !Ref DataRecordsBucket]]
+          BufferingHints: 
+            IntervalInSeconds: 60
+            SizeInMBs: 1
+          CompressionFormat: UNCOMPRESSED
+          Prefix: firehose/
+          RoleARN: !GetAtt KinesisFirehoseRole.Arn

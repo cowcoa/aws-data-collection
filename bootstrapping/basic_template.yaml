@@ -57,8 +57,15 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref Vpc
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-rt-pri']]
   InternetGateway:
     Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-igw']]
   AttachInternetGateway:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -68,6 +75,9 @@ Resources:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref Vpc
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-rt-pub']]
   InternetRoute:
     Type: AWS::EC2::Route
     Properties:
@@ -83,6 +93,9 @@ Resources:
       CidrBlock: !Select [ 0, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
       MapPublicIpOnLaunch: true
       VpcId: !Ref Vpc
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-sub-pub-a']]
   VpcSubnetARouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -97,6 +110,9 @@ Resources:
       CidrBlock: !Select [ 1, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
       MapPublicIpOnLaunch: true
       VpcId: !Ref Vpc
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-sub-pub-b']]
   VpcSubnetBRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -110,6 +126,9 @@ Resources:
         - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock: !Select [ 2, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
       VpcId: !Ref Vpc
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-sub-pri-c']]
   VpcSubnetCRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -123,6 +142,9 @@ Resources:
         - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock: !Select [ 3, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
       VpcId: !Ref Vpc
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-sub-pri-d']]
   VpcSubnetDRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:

@@ -42,6 +42,17 @@ Parameters:
     Type: String
     Description: >
       EC2 instance type used to run fluentbit.
+  FluentBitLogLevel:
+    Default: 'info'
+    Type: String
+    AllowedValues:
+      - 'error'
+      - 'warn'
+      - 'info'
+      - 'debug'
+      - 'trace'
+    Description: >
+      Log level of fluentbit.
   FluentBitHttpPort:
     Default: 3891
     Type: Number
@@ -52,6 +63,19 @@ Parameters:
     Type: Number
     Description: >
       Fluent Bit HTTP server port.
+  FluentBitInstanceKeyPair:
+    Default: ''
+    Type: String
+    Description: >
+      Flag that indicate whether the ecr lambda consumer repository should be created.
+  LaunchTemplateName:
+    Default: 'lt'
+    Type: String
+    Description: >
+      Flag that indicate whether the ecr lambda consumer repository should be created.
+Conditions:
+  UseKeyPair: 
+    !Not [!Equals [!Ref FluentBitInstanceKeyPair, '']]
 Resources:
   IBEC2InstanceProfileRole:
     Type: AWS::IAM::Role
@@ -83,7 +107,7 @@ Resources:
   FluentBitComponent:
     Type: AWS::ImageBuilder::Component
     Properties: 
-      Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit-install']]
       Description: 'Install fluent-bit.'
       ChangeDescription: 'Initial version.'
       Platform: 'Linux'
@@ -109,7 +133,7 @@ Resources:
   InfraConfig:
     Type: AWS::ImageBuilder::InfrastructureConfiguration
     Properties:
-      Name: !Join ['-', [!Ref Prefix, 'common']]
+      Name: !Join ['-', [!Ref Prefix, 'common-infra']]
       InstanceProfileName: !Ref IBEC2InstanceProfile
       Description: >
         'Common infrastructure configure used to build AMI.'
@@ -123,13 +147,13 @@ Resources:
   FluentBitDistConfig:
     Type: AWS::ImageBuilder::DistributionConfiguration
     Properties:
-      Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit-dist']]
       Description: >
         'Configure AMI distribution options.'
       Distributions:
         - Region: !Ref AWS::Region
           AmiDistributionConfiguration:
-            Name: !Join ['-', [!Ref Prefix, 'fluentbit - {{ imagebuilder:buildDate }}']] 
+            Name: !Join ['-', [!Ref Prefix, 'fluentbit', !Ref FluentBitLogLevel, '{{ imagebuilder:buildDate }}']] 
             Description: >
               'AMI with Fluent Bit(and corresponding config) pre-installed.'
   FluentBitImage:
@@ -185,6 +209,10 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: 'Name'
           Value: !Join ['-', [!Ref Prefix, 'fluentbit-sg']]
@@ -194,7 +222,7 @@ Resources:
       - FluentBitImage
       - FluentBitInstanceSG
     Properties:
-      LaunchTemplateName: !Join ['-', [!Ref Prefix, 'fluentbit']]
+      LaunchTemplateName: !Ref LaunchTemplateName
       LaunchTemplateData:
         IamInstanceProfile: 
           Name: !Ref FluentBitEC2InstanceProfile
@@ -209,6 +237,7 @@ Resources:
               Encrypted: false
               VolumeType: "gp2"
               VolumeSize: 100
+        KeyName: !If [UseKeyPair, !Ref FluentBitInstanceKeyPair, !Ref 'AWS::NoValue']
   FluentBitTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:

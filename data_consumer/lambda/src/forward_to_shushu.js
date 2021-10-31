@@ -11,7 +11,7 @@ exports.handler = function(event, context) {
     event.Records.forEach(function(record) {
         // Kinesis data is base64 encoded so decode here
         var payload = Buffer.from(record.kinesis.data, 'base64').toString('ascii');
-        console.log('New script test Cow Decoded payload:', payload);
+        console.log('10.31 aaa +-- time New script test Cow Decoded payload:', payload);
         log.info('from lambda-log: ', payload);
     });
 };

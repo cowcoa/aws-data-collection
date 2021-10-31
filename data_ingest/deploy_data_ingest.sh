@@ -1,14 +1,18 @@
 #!/bin/bash
 # Deploy/Update project on AWS by CloudFormation.
 
-source ../bootstrapping/config.sh
+# Get script location.
+SHELL_PATH=$(cd "$(dirname "$0")";pwd)
+# Import global variables
+source $SHELL_PATH/../bootstrapping/config.sh
 
 arg_count=$#
 script_name=$(basename $0)
 stack_action=update
 
-input_template_file="data_ingest_template.yaml"
-output_template_file="packaged-template-output.yaml"
+input_template_file="$SHELL_PATH/data_ingest_template.yaml"
+output_template_file_name="packaged-template-output.yaml"
+output_template_file="$SHELL_PATH/$output_template_file_name"
 
 cf_stack_name="$project_name-data-ingest"
 cf_change_set_name="$cf_stack_name-change-set"
@@ -42,7 +46,7 @@ fi
 echo "Packaging..."
 aws cloudformation package \
   --template-file $input_template_file \
-  --s3-bucket $deployment_bucket \
+  --s3-bucket $s3_deployment_bucket \
   --output-template-file $output_template_file
 
 result=$?
@@ -54,8 +58,8 @@ fi
 
 echo "Uploading template file..."
 aws s3api put-object \
-  --bucket $deployment_bucket \
-  --key $output_template_file \
+  --bucket $s3_deployment_bucket \
+  --key $output_template_file_name \
   --body $output_template_file
 
 echo "Creating change set..."
@@ -63,7 +67,7 @@ aws cloudformation create-change-set \
   --change-set-type ${stack_action^^} \
   --stack-name $cf_stack_name \
   --change-set-name $cf_change_set_name \
-  --template-url https://$deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file \
+  --template-url https://$s3_deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file_name \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --parameters ParameterKey="Prefix",ParameterValue=$project_name \
                ParameterKey="BasicStack",ParameterValue="$project_name-basic" \
@@ -71,7 +75,10 @@ aws cloudformation create-change-set \
                ParameterKey="AsgMinCapacity",ParameterValue=$asg_min_capacity \
                ParameterKey="AsgMaxCapacity",ParameterValue=$asg_max_capacity \
                ParameterKey="AsgDesiredCapacity",ParameterValue=$asg_desired_capacity \
-               ParameterKey="KinesisStreamName",ParameterValue=$fluentbit_kinesis_stream
+               ParameterKey="KinesisStreamName",ParameterValue=$fb_kinesis_stream \
+               ParameterKey="KinesisStreamShardCount",ParameterValue=$kds_shard_count \
+               ParameterKey="NlbListenerPort",ParameterValue=$nlb_listener_port \
+               ParameterKey="DataRecordsBucket",ParameterValue=$s3_data_records_bucket
 
 result=$?
 
