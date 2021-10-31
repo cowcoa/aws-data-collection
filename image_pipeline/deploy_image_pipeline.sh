@@ -72,16 +72,16 @@ aws cloudformation create-change-set \
   --template-url https://$s3_deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file_name \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --parameters ParameterKey="Prefix",ParameterValue=$project_name \
+               ParameterKey="BasicStack",ParameterValue="$project_name-basic" \
                ParameterKey="DeploymentBucket",ParameterValue=$s3_deployment_bucket \
                ParameterKey="ComponentDocUri",ParameterValue="s3://$s3_deployment_bucket/image-builder/components/install-fluentbit.yaml" \
                ParameterKey="ComponentVersion",ParameterValue=$ib_component_version \
                ParameterKey="ImageRecipeParentAmiId",ParameterValue=$ib_amz_linux_2_ami \
                ParameterKey="ImageRecipeVersion",ParameterValue=$ib_image_recipe_version \
-               ParameterKey="BasicStack",ParameterValue="$project_name-basic" \
                ParameterKey="FluentBitInstanceType",ParameterValue=$fb_instance_type \
                ParameterKey="FluentBitHttpPort",ParameterValue=$fb_http_port \
                ParameterKey="FluentBitLogLevel",ParameterValue=$fb_log_level \
-               ParameterKey="FluentBitInstanceKeyPair",ParameterValue=$fb_instance_key_pair \
+               ParameterKey="EC2InstanceKeyPair",ParameterValue=$ec2_instance_key_pair \
                ParameterKey="AsgMinCapacity",ParameterValue=$asg_min_capacity \
                ParameterKey="AsgMaxCapacity",ParameterValue=$asg_max_capacity \
                ParameterKey="AsgDesiredCapacity",ParameterValue=$asg_desired_capacity

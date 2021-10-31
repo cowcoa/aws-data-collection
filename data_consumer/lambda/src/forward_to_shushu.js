@@ -1,5 +1,5 @@
 'use strict';
-console.log('Loading function');
+console.log('Loading forward_to_shushu function');
 
 // Depend npm modules
 const log = require('lambda-log');
@@ -7,11 +7,12 @@ const log = require('lambda-log');
 const AWS = require('aws-sdk');
 
 exports.handler = function(event, context) {
-    //console.log(JSON.stringify(event, null, 2));
+    log.info('Event: %j', event);
+    log.info('Context: %j', context);
+    
     event.Records.forEach(function(record) {
         // Kinesis data is base64 encoded so decode here
         var payload = Buffer.from(record.kinesis.data, 'base64').toString('ascii');
-        console.log('10.31 aaa +-- time New script test Cow Decoded payload:', payload);
-        log.info('from lambda-log: ', payload);
+        console.log('Decoded payload:', payload);
     });
 };

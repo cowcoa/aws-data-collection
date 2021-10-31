@@ -7,6 +7,11 @@ Parameters:
     Type: String
     Description: >
       Resource name in this template should be prefixed with this word.
+  BasicStack:
+    Default: 'stack-vpc'
+    Type: String
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
   DeploymentBucket:
     Default: 'deployment-bucket'
     Type: String
@@ -32,11 +37,6 @@ Parameters:
     Type: String
     Description: >
       Image Builder ImageRecipe version.
-  BasicStack:
-    Default: 'stack-vpc'
-    Type: String
-    Description: >
-      Stack name of VPC used to deploy the following infrastructure.
   FluentBitInstanceType:
     Default: 't3.small'
     Type: String
@@ -63,7 +63,7 @@ Parameters:
     Type: Number
     Description: >
       Fluent Bit HTTP server port.
-  FluentBitInstanceKeyPair:
+  EC2InstanceKeyPair:
     Default: ''
     Type: String
     Description: >
@@ -85,7 +85,7 @@ Parameters:
       Stack name of VPC used to deploy the following infrastructure.
 Conditions:
   UseKeyPair: 
-    !Not [!Equals [!Ref FluentBitInstanceKeyPair, '']]
+    !Not [!Equals [!Ref EC2InstanceKeyPair, '']]
 Resources:
   IBEC2InstanceProfileRole:
     Type: AWS::IAM::Role
@@ -247,7 +247,7 @@ Resources:
               Encrypted: false
               VolumeType: "gp2"
               VolumeSize: 100
-        KeyName: !If [UseKeyPair, !Ref FluentBitInstanceKeyPair, !Ref 'AWS::NoValue']
+        KeyName: !If [UseKeyPair, !Ref EC2InstanceKeyPair, !Ref 'AWS::NoValue']
   FluentBitTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:

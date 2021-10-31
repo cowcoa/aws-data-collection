@@ -1,4 +1,5 @@
-console.log('Loading function');
+'use strict';
+console.log('Loading just_test function');
 
 exports.handler = function(event, context) {
     //console.log(JSON.stringify(event, null, 2));
