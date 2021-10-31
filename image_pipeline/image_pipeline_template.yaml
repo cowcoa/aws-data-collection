@@ -287,6 +287,10 @@ Resources:
       LaunchTemplate:
         LaunchTemplateId: !Ref FluentBitLaunchTemplate
         Version: !GetAtt FluentBitLaunchTemplate.LatestVersionNumber
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'fluentbit-instance']]
+          PropagateAtLaunch: "true"
   FluentBitAsgPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:

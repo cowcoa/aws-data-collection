@@ -41,7 +41,7 @@ Resources:
   MyNLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties: 
-      Name: 'rg-test-nlb'
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit-nlb']]
       IpAddressType: 'ipv4'
       Scheme: 'internet-facing'
       Subnets:
@@ -93,7 +93,7 @@ Resources:
       - KinesisFirehoseRole
       - KinesisDataStream
     Properties:
-        DeliveryStreamName: 'my-kinesis-delivery-stream'
+        DeliveryStreamName: !Join ['-', [!Ref Prefix, 'delivery-stream']]
         DeliveryStreamType: KinesisStreamAsSource
         KinesisStreamSourceConfiguration: 
           KinesisStreamARN: !GetAtt KinesisDataStream.Arn
