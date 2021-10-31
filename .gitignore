@@ -117,11 +117,7 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
-# Python environments
-python2/
-python3/
-
 # Intermediate files
-tmp.*/
 packaged-template-output.yaml
 install-fluentbit.yaml
+td-agent-bit.env
