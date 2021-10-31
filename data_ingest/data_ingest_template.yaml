@@ -17,21 +17,6 @@ Parameters:
     Type: String
     Description: >
       Stack name of Image Builder.
-  AsgMinCapacity:
-    Default: 0
-    Type: Number
-    Description: >
-      Stack name of VPC used to deploy the following infrastructure.
-  AsgMaxCapacity:
-    Default: 0
-    Type: Number
-    Description: >
-      Stack name of VPC used to deploy the following infrastructure.
-  AsgDesiredCapacity:
-    Default: 0
-    Type: Number
-    Description: >
-      Stack name of VPC used to deploy the following infrastructure.
   KinesisStreamName:
     Default: stream
     Type: String
@@ -53,43 +38,6 @@ Parameters:
     Description: >
       Data records bucket.
 Resources:
-  FluentBitAsg:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    UpdatePolicy:
-      AutoScalingRollingUpdate:
-        MaxBatchSize: 1
-        MinInstancesInService: 1
-    Properties:
-      AutoScalingGroupName: !Join ['-', [!Ref Prefix, 'fluentbit']]
-      MinSize: !Ref AsgMinCapacity
-      MaxSize: !Ref AsgMaxCapacity
-      DesiredCapacity: !Ref AsgDesiredCapacity
-      Cooldown: 240
-      HealthCheckGracePeriod: 180
-      HealthCheckType: 'ELB'
-      TerminationPolicies:
-        - 'OldestLaunchTemplate'
-      VPCZoneIdentifier:
-        - Fn::ImportValue:
-            !Sub '${BasicStack}-SubnetC'
-        - Fn::ImportValue:
-            !Sub '${BasicStack}-SubnetD'
-      TargetGroupARNs: 
-        - Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitTargetGroup'
-      LaunchTemplate:
-        LaunchTemplateId:
-          Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitLT'
-        Version:
-          Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitLTLatestVersion'
-  FluentBitAsgPolicy:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Properties:
-      AutoScalingGroupName: !Ref FluentBitAsg
-      PolicyType: TargetTrackingScaling
-      TargetTrackingConfiguration:
-        PredefinedMetricSpecification:
-          PredefinedMetricType: ASGAverageCPUUtilization
-        TargetValue: 60
   MyNLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties: 

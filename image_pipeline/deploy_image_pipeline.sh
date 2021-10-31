@@ -81,7 +81,10 @@ aws cloudformation create-change-set \
                ParameterKey="FluentBitInstanceType",ParameterValue=$fb_instance_type \
                ParameterKey="FluentBitHttpPort",ParameterValue=$fb_http_port \
                ParameterKey="FluentBitLogLevel",ParameterValue=$fb_log_level \
-               ParameterKey="FluentBitInstanceKeyPair",ParameterValue=$fb_instance_key_pair
+               ParameterKey="FluentBitInstanceKeyPair",ParameterValue=$fb_instance_key_pair \
+               ParameterKey="AsgMinCapacity",ParameterValue=$asg_min_capacity \
+               ParameterKey="AsgMaxCapacity",ParameterValue=$asg_max_capacity \
+               ParameterKey="AsgDesiredCapacity",ParameterValue=$asg_desired_capacity
 
 result=$?
 

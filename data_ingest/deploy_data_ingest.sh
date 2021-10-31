@@ -72,9 +72,6 @@ aws cloudformation create-change-set \
   --parameters ParameterKey="Prefix",ParameterValue=$project_name \
                ParameterKey="BasicStack",ParameterValue="$project_name-basic" \
                ParameterKey="ImagePipelineStack",ParameterValue="$project_name-image-pipeline" \
-               ParameterKey="AsgMinCapacity",ParameterValue=$asg_min_capacity \
-               ParameterKey="AsgMaxCapacity",ParameterValue=$asg_max_capacity \
-               ParameterKey="AsgDesiredCapacity",ParameterValue=$asg_desired_capacity \
                ParameterKey="KinesisStreamName",ParameterValue=$fb_kinesis_stream \
                ParameterKey="KinesisStreamShardCount",ParameterValue=$kds_shard_count \
                ParameterKey="NlbListenerPort",ParameterValue=$nlb_listener_port \

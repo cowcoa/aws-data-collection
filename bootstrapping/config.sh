@@ -34,17 +34,15 @@ fb_instance_type="t3.small"
 # Fluent Bit log level. Allowed values are: error, warn, info, debug and trace.
 fb_log_level="debug"
 #
-#fb_instance_key_pair="opalcube-aws-us-west-2-key-pair"
-fb_instance_key_pair=""
+fb_instance_key_pair="opalcube-aws-us-west-2-key-pair"
+#fb_instance_key_pair=""
 # Fluent Bit cluster ASG
 asg_min_capacity=1
-asg_max_capacity=1
+asg_max_capacity=2
 asg_desired_capacity=1
 # Kinesis Data Stream
 kds_shard_count=1
 # NLB
 nlb_listener_port=8080
-#
-ec2_launch_template="$project_name-fluentbit-lt"
 
 echo "config.sh imported."

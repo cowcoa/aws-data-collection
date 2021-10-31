@@ -14,7 +14,7 @@ Parameters:
     Type: String
     Description: >
       VPC's CIDR range.
-  BucketName:
+  DataRecordsBucketName:
     Default: 's3-bucket'
     Type: String
     Description: >
@@ -27,7 +27,7 @@ Parameters:
       - 'false'
     Description: >
       Flag that indicate whether the data records bucket should be created.
-  RepositoryName:
+  LambdaConsumerRepoName:
     Default: 'ecr-repository'
     Type: String
     Description: >
@@ -155,7 +155,7 @@ Resources:
     DeletionPolicy: Retain
     Condition: CreateBucket
     Properties:
-      BucketName: !Ref BucketName
+      BucketName: !Ref DataRecordsBucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -166,7 +166,7 @@ Resources:
     DeletionPolicy: Retain
     Condition: CreateRepository
     Properties: 
-      RepositoryName: !Ref RepositoryName
+      RepositoryName: !Ref LambdaConsumerRepoName
       RepositoryPolicyText: 
         Version: "2012-10-17"
         Statement: 
@@ -179,6 +179,33 @@ Resources:
             Action: 
               - "ecr:GetDownloadUrlForLayer"
               - "ecr:BatchGetImage"
+  VpcEndpointSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Join ['-', [!Ref Prefix, 'vpc-endpoint-sg']]
+      GroupDescription: 'Enable HTTPS access on 443 port for AWS Service.'
+      VpcId: !Ref Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'vpc-endpoint-sg']]
+  KinesisStreamEndpoint:
+    Type: 'AWS::EC2::VPCEndpoint'
+    DependsOn: VpcEndpointSG
+    Properties:
+      VpcEndpointType: Interface
+      PrivateDnsEnabled: true
+      SecurityGroupIds:
+        - !GetAtt VpcEndpointSG.GroupId
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.kinesis-streams'
+      VpcId: !Ref Vpc
+      SubnetIds:
+        - !Ref VpcSubnetC
+        - !Ref VpcSubnetD
 Outputs:
   VpcValue:
     Description: The VPC ID.

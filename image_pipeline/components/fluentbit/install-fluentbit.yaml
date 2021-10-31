@@ -40,6 +40,7 @@ phases:
         inputs:
           commands:
             - 'sudo yum install -y td-agent-bit'
+            - 'sudo yum install -y jq'
       -
         name: GetConfigFile
         action: S3Download

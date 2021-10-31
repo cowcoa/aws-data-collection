@@ -68,11 +68,21 @@ Parameters:
     Type: String
     Description: >
       Flag that indicate whether the ecr lambda consumer repository should be created.
-  LaunchTemplateName:
-    Default: 'lt'
-    Type: String
+  AsgMinCapacity:
+    Default: 0
+    Type: Number
     Description: >
-      Flag that indicate whether the ecr lambda consumer repository should be created.
+      Stack name of VPC used to deploy the following infrastructure.
+  AsgMaxCapacity:
+    Default: 0
+    Type: Number
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
+  AsgDesiredCapacity:
+    Default: 0
+    Type: Number
+    Description: >
+      Stack name of VPC used to deploy the following infrastructure.
 Conditions:
   UseKeyPair: 
     !Not [!Equals [!Ref FluentBitInstanceKeyPair, '']]
@@ -222,7 +232,7 @@ Resources:
       - FluentBitImage
       - FluentBitInstanceSG
     Properties:
-      LaunchTemplateName: !Ref LaunchTemplateName
+      LaunchTemplateName: !Join ['-', [!Ref Prefix, 'fluentbit-lt']]
       LaunchTemplateData:
         IamInstanceProfile: 
           Name: !Ref FluentBitEC2InstanceProfile
@@ -251,19 +261,42 @@ Resources:
       TargetType: 'instance'
       Protocol: 'TCP'
       Port: !Ref FluentBitHttpPort
+  FluentBitAsg:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 1
+        MinInstancesInService: 1
+    Properties:
+      AutoScalingGroupName: !Join ['-', [!Ref Prefix, 'fluentbit-asg']]
+      MinSize: !Ref AsgMinCapacity
+      MaxSize: !Ref AsgMaxCapacity
+      DesiredCapacity: !Ref AsgDesiredCapacity
+      Cooldown: 240
+      HealthCheckGracePeriod: 180
+      HealthCheckType: 'ELB'
+      TerminationPolicies:
+        - 'OldestLaunchTemplate'
+      VPCZoneIdentifier:
+        - Fn::ImportValue:
+            !Sub '${BasicStack}-SubnetC'
+        - Fn::ImportValue:
+            !Sub '${BasicStack}-SubnetD'
+      TargetGroupARNs: 
+        - !Ref FluentBitTargetGroup
+      LaunchTemplate:
+        LaunchTemplateId: !Ref FluentBitLaunchTemplate
+        Version: !GetAtt FluentBitLaunchTemplate.LatestVersionNumber
+  FluentBitAsgPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref FluentBitAsg
+      PolicyType: TargetTrackingScaling
+      TargetTrackingConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ASGAverageCPUUtilization
+        TargetValue: 60
 Outputs:
-  LaunchTemplateValue:
-    Description: >
-      Fluent Bit LaunchTemplate ID.
-    Value: !Ref FluentBitLaunchTemplate
-    Export:
-      Name: !Sub '${AWS::StackName}-FluentBitLT'
-  LaunchTemplateLatestVersionNumberValue:
-    Description: >
-      Fluent Bit LaunchTemplate latest version number.
-    Value: !GetAtt FluentBitLaunchTemplate.LatestVersionNumber
-    Export:
-      Name: !Sub '${AWS::StackName}-FluentBitLTLatestVersion'
   TargetGroupValue:
     Description: >
       Fluent Bit NLB TargetGroup.

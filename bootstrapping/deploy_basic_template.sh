@@ -88,9 +88,9 @@ aws cloudformation create-change-set \
   --template-url https://$s3_deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file_name \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --parameters ParameterKey="Prefix",ParameterValue=$project_name \
-               ParameterKey="BucketName",ParameterValue=$s3_data_records_bucket \
+               ParameterKey="DataRecordsBucketName",ParameterValue=$s3_data_records_bucket \
                ParameterKey="ShouldCreateBucket",ParameterValue=$should_create_bucket \
-               ParameterKey="RepositoryName",ParameterValue=$ecr_lambda_consumer_repo \
+               ParameterKey="LambdaConsumerRepoName",ParameterValue=$ecr_lambda_consumer_repo \
                ParameterKey="ShouldCreateRepository",ParameterValue=$should_create_repository
 
 result=$?
