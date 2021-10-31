@@ -15,7 +15,7 @@ s3_data_records_bucket="$project_name-data-records-$deployment_region"
 # Kinesis Data Stream lambda consumer image repository.
 ecr_lambda_consumer_repo="$project_name-lambda-consumer"
 # lambda consumer image repository URI.
-ecr_lambda_consumer_repo_uri=$aws_account_id.dkr.ecr.$deployment_region.amazonaws.com/$lambda_consumer_ecr_repo
+ecr_lambda_consumer_repo_uri=$aws_account_id.dkr.ecr.$deployment_region.amazonaws.com/$ecr_lambda_consumer_repo
 # Image Builder AWSTOE component version.
 ib_component_version="1.0.0"
 # Image Builder image recipe version.

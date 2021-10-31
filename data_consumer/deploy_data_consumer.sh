@@ -1,14 +1,18 @@
 #!/bin/bash
 # Deploy/Update project on AWS by CloudFormation.
 
-source ../bootstrapping/config.sh
+# Get script location.
+SHELL_PATH=$(cd "$(dirname "$0")";pwd)
+# Import global variables
+source $SHELL_PATH/../bootstrapping/config.sh
 
 arg_count=$#
 script_name=$(basename $0)
 stack_action=update
 
-input_template_file="data_consumer_template.yaml"
-output_template_file="packaged-template-output.yaml"
+input_template_file="$SHELL_PATH/data_consumer_template.yaml"
+output_template_file_name="packaged-template-output.yaml"
+output_template_file="$SHELL_PATH/$output_template_file_name"
 
 cf_stack_name="$project_name-data-consumer"
 cf_change_set_name="$cf_stack_name-change-set"
@@ -42,7 +46,7 @@ fi
 echo "Packaging..."
 aws cloudformation package \
   --template-file $input_template_file \
-  --s3-bucket $deployment_bucket \
+  --s3-bucket $s3_deployment_bucket \
   --output-template-file $output_template_file
 
 result=$?
@@ -54,16 +58,16 @@ fi
 
 echo "Uploading template file..."
 aws s3api put-object \
-  --bucket $deployment_bucket \
-  --key $output_template_file \
+  --bucket $s3_deployment_bucket \
+  --key $output_template_file_name \
   --body $output_template_file
   
 latest_image_degest="$(aws ecr describe-images \
-  --repository-name $lambda_consumer_ecr_repo \
+  --repository-name $ecr_lambda_consumer_repo \
   --image-ids imageTag=latest \
   --query 'imageDetails[0].imageDigest' \
   --output text)"
-latest_image_uri="$lambda_consumer_ecr_repo_uri@$latest_image_degest"
+latest_image_uri="$ecr_lambda_consumer_repo_uri@$latest_image_degest"
 echo "Latest Image Uri: $latest_image_uri"
 
 echo "Creating change set..."
@@ -71,11 +75,11 @@ aws cloudformation create-change-set \
   --change-set-type ${stack_action^^} \
   --stack-name $cf_stack_name \
   --change-set-name $cf_change_set_name \
-  --template-url https://$deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file \
+  --template-url https://$s3_deployment_bucket.s3.$deployment_region.amazonaws.com/$output_template_file_name \
   --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
   --parameters ParameterKey="Prefix",ParameterValue=$project_name \
                ParameterKey="ImageUri",ParameterValue="$latest_image_uri" \
-               ParameterKey="KinesisStreamName",ParameterValue=$fluentbit_kinesis_stream
+               ParameterKey="KinesisStreamName",ParameterValue=$fb_kinesis_stream
 
 result=$?
 

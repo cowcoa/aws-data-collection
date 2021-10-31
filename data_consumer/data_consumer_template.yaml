@@ -56,6 +56,7 @@ Resources:
       ReservedConcurrentExecutions: 10
   MyEventSourceMapping:
     Type: AWS::Lambda::EventSourceMapping
+    DependsOn: ReadRecordFromKinesis
     Properties:
       EventSourceArn:
         Fn::Join:
