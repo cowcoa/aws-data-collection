@@ -33,10 +33,10 @@ fb_kinesis_stream="$project_name-stream"
 # Fluent Bit cluster instance type/size.
 fb_instance_type="t3.small"
 # Fluent Bit log level. Allowed values are: error, warn, info, debug and trace.
-fb_log_level="debug"
+fb_log_level="info"
 # Fluent Bit instance's key pair name.
-ec2_instance_key_pair="opalcube-aws-us-west-2-key-pair"
-#ec2_instance_key_pair=""
+#ec2_instance_key_pair="opalcube-aws-us-west-2-key-pair"
+ec2_instance_key_pair=""
 # Fluent Bit cluster ASG.
 # The ASG always keep 1 instance in running status. you MUST set max capacity greater than min capacity.
 asg_min_capacity=1
