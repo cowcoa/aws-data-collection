@@ -206,9 +206,6 @@ Resources:
       SubnetIds:
         - !Ref VpcSubnetC
         - !Ref VpcSubnetD
-      Tags:
-        - Key: 'Name'
-          Value: !Join ['-', [!Ref Prefix, 'fluentbit-kinesis-stream']]
 Outputs:
   VpcValue:
     Description: The VPC ID.
