@@ -65,7 +65,7 @@ Resources:
   KinesisFirehoseRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['-', [!Ref Prefix, 'KinesisFirehoseRole']]
+      RoleName: !Join ['-', [!Ref Prefix, 'KinesisFirehoseRole', !Ref 'AWS::Region']]
       Description: >
         'Role used to run Fluent Bit and forward data to Kinesis Stream.'
       AssumeRolePolicyDocument:

@@ -90,7 +90,7 @@ Resources:
   IBEC2InstanceProfileRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['-', [!Ref Prefix, 'EC2InstanceProfileForImageBuilder']]
+      RoleName: !Join ['-', [!Ref Prefix, 'EC2InstanceProfileForImageBuilder', !Ref 'AWS::Region']]
       Description: >
         'Role used to run AWSTOE of Image Builder.'
       AssumeRolePolicyDocument:
@@ -177,7 +177,7 @@ Resources:
   FluentBitEC2InstanceProfileRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join ['-', [!Ref Prefix, 'FluentBitEC2InstanceProfileRole']]
+      RoleName: !Join ['-', [!Ref Prefix, 'FluentBitEC2InstanceProfileRole', !Ref 'AWS::Region']]
       Description: >
         'Role used to run Fluent Bit and forward data to Kinesis Stream.'
       AssumeRolePolicyDocument:

@@ -18,10 +18,10 @@ Parameters:
     Description: >
       Stack name of Image Builder.
 Resources:
-  AnalyzeVideoRole:
+  LambdaKinesisRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: 'rg-lambda-kinesis-role'
+      RoleName: !Join ['-', [!Ref Prefix, 'LambdaKinesisRole', !Ref 'AWS::Region']]
       Description: >
         'Role for executing kinesis lambda function.'
       AssumeRolePolicyDocument:
