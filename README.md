@@ -1,3 +1,5 @@
+![alt text](../master/architecture_diagram.png?raw=true)
+
 ## Deployment Steps:
 
 0. Before you deploy this project, please check and adjust variables in ./bootstrapping/config.sh.
