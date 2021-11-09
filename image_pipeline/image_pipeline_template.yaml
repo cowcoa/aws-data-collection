@@ -258,6 +258,9 @@ Resources:
       HealthCheckPath: '/api/v1/health'
       HealthCheckPort: !Ref FluentBitHealthCheckPort
       HealthCheckProtocol: 'HTTP'
+      HealthCheckIntervalSeconds: 10
+      HealthCheckTimeoutSeconds: 6
+      HealthyThresholdCount: 3
       TargetType: 'instance'
       Protocol: 'TCP'
       Port: !Ref FluentBitHttpPort
