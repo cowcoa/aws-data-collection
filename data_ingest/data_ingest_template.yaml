@@ -32,11 +32,19 @@ Parameters:
     Type: Number
     Description: >
       Stack name of Image Builder.
+  NlbCertificateArn:
+    Default: 'arn:aws:acm:us-east-1:123:certificate/abc-def'
+    Type: String
+    Description: >
+      ACM Certificate ARN for NLB.
   DataRecordsBucket:
     Default: 's3-bucket'
     Type: String
     Description: >
       Data records bucket.
+Conditions:
+  UseNlbCertificate:
+    !Not [!Equals [!Ref NlbCertificateArn, '']]
 Resources:
   MyNLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -53,6 +61,8 @@ Resources:
   NlbListener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
     Properties:
+      Certificates:
+        - CertificateArn: !If [UseNlbCertificate, !Ref NlbCertificateArn, !Ref 'AWS::NoValue']
       DefaultActions:
         - Type: "forward"
           ForwardConfig:
@@ -61,7 +71,7 @@ Resources:
                   Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitTargetGroup'
       LoadBalancerArn: !Ref MyNLB
       Port: !Ref NlbListenerPort
-      Protocol: "TCP"
+      Protocol: !If [UseNlbCertificate, 'TLS', 'TCP']
   KinesisFirehoseRole:
     Type: AWS::IAM::Role
     Properties:
