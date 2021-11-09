@@ -173,7 +173,6 @@ Resources:
         InfrastructureConfigurationArn: !Ref InfraConfig
         DistributionConfigurationArn: !Ref FluentBitDistConfig
         EnhancedImageMetadataEnabled: True
-#-----------------------------------------------
   FluentBitEC2InstanceProfileRole:
     Type: AWS::IAM::Role
     Properties:
@@ -215,14 +214,14 @@ Resources:
           FromPort: !Ref FluentBitHealthCheckPort
           ToPort: !Ref FluentBitHealthCheckPort
           CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: icmp
-          FromPort: -1
-          ToPort: -1
-          CidrIp: 0.0.0.0/0
+#        - IpProtocol: tcp
+#          FromPort: 22
+#          ToPort: 22
+#          CidrIp: 0.0.0.0/0
+#        - IpProtocol: icmp
+#          FromPort: -1
+#          ToPort: -1
+#          CidrIp: 0.0.0.0/0
       Tags:
         - Key: 'Name'
           Value: !Join ['-', [!Ref Prefix, 'fluentbit-sg']]

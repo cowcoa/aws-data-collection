@@ -51,5 +51,16 @@ nlb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48
 aga_enable="true"
 # Kinesis stream shard count.
 kds_shard_count=1
+# Kinesis data retention period, unit is Hour. Allowed value range: [24, 8760(365 days)]
+kds_retention_hours=24
+# Kinesis Data Firehose.
+# Buffer incoming data for the specified period of time, in seconds, before delivering it to the destination.
+# Allowed value range: [60, 900]
+kdf_buffer_time=60
+# Buffer incoming data to the specified size, in MiBs, before delivering it to the destination.
+# Allowed value range: [1, 128]
+kdf_buffer_size=1
+# A prefix that Kinesis Data Firehose evaluates and adds to records before writing them to S3.
+kdf_s3_prefix='aws'
 
 echo "config.sh imported."

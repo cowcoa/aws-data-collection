@@ -27,6 +27,32 @@ Parameters:
     Type: Number
     Description: >
       Stack name of Image Builder.
+  KinesisStreamRetentionHours:
+    Default: 24
+    Type: Number
+    MinValue: 24
+    MaxValue: 8760
+    Description: >
+      The number of hours for the data records that are stored in shards to remain accessible.
+  KinesisFirehoseBufferTime:
+    Default: 60
+    Type: Number
+    MinValue: 60
+    MaxValue: 900
+    Description: >
+      Buffer incoming data for the specified period of time, in seconds, before delivering it to the destination.
+  KinesisFirehoseBufferSize:
+    Default: 1
+    Type: Number
+    MinValue: 1
+    MaxValue: 128
+    Description: >
+      Buffer incoming data to the specified size, in MiBs, before delivering it to the destination.
+  KinesisFirehoseS3Prefix:
+    Default: 'firehose'
+    Type: String
+    Description: >
+      A prefix that Kinesis Data Firehose evaluates and adds to records before writing them to S3.
   NlbListenerPort:
     Default: 8080
     Type: Number
@@ -102,10 +128,10 @@ Resources:
         - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
         - 'arn:aws:iam::aws:policy/AmazonKinesisFullAccess'
   KinesisDataStream: 
-      Type: AWS::Kinesis::Stream 
+      Type: AWS::Kinesis::Stream
       Properties: 
           Name: !Ref KinesisStreamName 
-          RetentionPeriodHours: 24
+          RetentionPeriodHours: !Ref KinesisStreamRetentionHours
           ShardCount: !Ref KinesisStreamShardCount
   Deliverystream: 
     Type: AWS::KinesisFirehose::DeliveryStream
@@ -121,10 +147,10 @@ Resources:
         ExtendedS3DestinationConfiguration: 
           BucketARN: !Join [':::', ['arn:aws:s3', !Ref DataRecordsBucket]]
           BufferingHints: 
-            IntervalInSeconds: 60
-            SizeInMBs: 1
+            IntervalInSeconds: !Ref KinesisFirehoseBufferTime
+            SizeInMBs: !Ref KinesisFirehoseBufferSize
           CompressionFormat: UNCOMPRESSED
-          Prefix: firehose/
+          Prefix: !Join ['/', [!Ref KinesisFirehoseS3Prefix, '']]
           RoleARN: !GetAtt KinesisFirehoseRole.Arn
   Accelerator:
     Type: AWS::GlobalAccelerator::Accelerator
