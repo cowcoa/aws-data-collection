@@ -37,6 +37,14 @@ Parameters:
     Type: String
     Description: >
       ACM Certificate ARN for NLB.
+  EnableAccelerator:
+    Default: 'false'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      Whether to enable AGA.
   DataRecordsBucket:
     Default: 's3-bucket'
     Type: String
@@ -45,6 +53,8 @@ Parameters:
 Conditions:
   UseNlbCertificate:
     !Not [!Equals [!Ref NlbCertificateArn, '']]
+  UseAccelerator:
+    !Not [!Equals [!Ref EnableAccelerator, 'false']]
 Resources:
   MyNLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -116,3 +126,28 @@ Resources:
           CompressionFormat: UNCOMPRESSED
           Prefix: firehose/
           RoleARN: !GetAtt KinesisFirehoseRole.Arn
+  Accelerator:
+    Type: AWS::GlobalAccelerator::Accelerator
+    Properties:
+      Name: SampleAccelerator
+      Enabled: !If [UseAccelerator, true, false]
+  Listener:
+    Type: AWS::GlobalAccelerator::Listener
+    Properties:
+      AcceleratorArn:
+        Ref: Accelerator
+      Protocol: TCP
+      PortRanges:
+      - FromPort: !Ref NlbListenerPort
+        ToPort: !Ref NlbListenerPort
+  EndpointGroup:
+    Type: AWS::GlobalAccelerator::EndpointGroup
+    Properties:
+      ListenerArn:
+        Ref: Listener
+      EndpointGroupRegion:
+        Ref: 'AWS::Region'
+      TrafficDialPercentage: 100
+      EndpointConfigurations:
+      - EndpointId:
+          Ref: MyNLB

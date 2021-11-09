@@ -76,6 +76,7 @@ aws cloudformation create-change-set \
                ParameterKey="KinesisStreamShardCount",ParameterValue=$kds_shard_count \
                ParameterKey="NlbListenerPort",ParameterValue=$nlb_listener_port \
                ParameterKey="NlbCertificateArn",ParameterValue=$nlb_certificate \
+               ParameterKey="EnableAccelerator",ParameterValue=$aga_enable \
                ParameterKey="DataRecordsBucket",ParameterValue=$s3_data_records_bucket
 
 result=$?

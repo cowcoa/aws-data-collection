@@ -45,8 +45,10 @@ asg_desired_capacity=1
 # NLB's listener port. NLN will forward request from nlb_listener_port to fb_http_port.
 nlb_listener_port=8080
 # NLB's ACM certificate that contained custom domain name.
-#nlb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48a9-80c4-fce59654af3f"
-nlb_certificate=""
+nlb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48a9-80c4-fce59654af3f"
+#nlb_certificate=""
+# Whether to enable Global Accelerator
+aga_enable="true"
 # Kinesis stream shard count.
 kds_shard_count=1
 
