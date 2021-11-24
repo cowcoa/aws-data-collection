@@ -39,7 +39,7 @@ Resources:
         - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
   ReadRecordFromKinesis:
     Type: 'AWS::Lambda::Function'
-    DependsOn: AnalyzeVideoRole
+    DependsOn: LambdaKinesisRole
     Properties:
       FunctionName: !Join ['-', [!Ref Prefix, 'kinesis-reader']]
       Description: 'Download video from website and tag it.'
@@ -50,7 +50,7 @@ Resources:
       ImageConfig:
         Command: 
           - 'forward_to_shushu.handler'
-      Role: !GetAtt AnalyzeVideoRole.Arn
+      Role: !GetAtt LambdaKinesisRole.Arn
       Timeout: 30
 #      Runtime: 'nodejs14.x'
       ReservedConcurrentExecutions: 10
