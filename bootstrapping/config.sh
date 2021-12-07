@@ -26,8 +26,8 @@ ib_amz_linux_2_ami="$(aws ssm get-parameters \
   --names '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' \
   --query 'Parameters[0].[Value]' \
   --output text)"
-# HTTP input plugin, listen port.
-fb_http_port="7891"
+# HTTP listen port.
+http_port="7891"
 # Kinesis stream ouput plugin, kinesis data stream name.
 fb_kinesis_stream="$project_name-stream"
 # Fluent Bit cluster instance type/size.
@@ -42,7 +42,7 @@ ec2_instance_key_pair=""
 asg_min_capacity=1
 asg_max_capacity=3
 asg_desired_capacity=1
-# NLB's listener port. NLN will forward request from nlb_listener_port to fb_http_port.
+# NLB's listener port. NLN will forward request from nlb_listener_port to http_port.
 nlb_listener_port=8080
 # NLB's ACM certificate that contained custom domain name.
 nlb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48a9-80c4-fce59654af3f"
