@@ -40,9 +40,18 @@ Parameters:
       - 'false'
     Description: >
       Flag that indicate whether the ecr lambda consumer repository should be created.
+  DeploymentEnvironment:
+    Default: 'dev'
+    Type: String
+    AllowedValues:
+      - 'dev'
+      - 'prod'
+    Description: >
+      All VPC Subnets will be public in dev environment.
 Conditions:
   CreateBucket: !Equals [!Ref ShouldCreateBucket, 'true']
   CreateRepository: !Equals [!Ref ShouldCreateRepository, 'true']
+  PublicAllSubnets: !Equals [!Ref DeploymentEnvironment, 'dev']
 Resources:
   Vpc:
     Type: AWS::EC2::VPC
@@ -133,7 +142,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref VpcSubnetC
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !If [PublicAllSubnets, !Ref PublicRouteTable, !Ref PrivateRouteTable]
   VpcSubnetD:
     Type: AWS::EC2::Subnet
     Properties:
@@ -149,7 +158,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref VpcSubnetD
-      RouteTableId: !Ref PrivateRouteTable
+      RouteTableId: !If [PublicAllSubnets, !Ref PublicRouteTable, !Ref PrivateRouteTable]
   DataRecordsBucket:
     Type: 'AWS::S3::Bucket'
     DeletionPolicy: Retain

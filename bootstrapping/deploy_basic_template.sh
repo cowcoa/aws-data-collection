@@ -91,7 +91,8 @@ aws cloudformation create-change-set \
                ParameterKey="DataRecordsBucketName",ParameterValue=$s3_data_records_bucket \
                ParameterKey="ShouldCreateBucket",ParameterValue=$should_create_bucket \
                ParameterKey="LambdaConsumerRepoName",ParameterValue=$ecr_lambda_consumer_repo \
-               ParameterKey="ShouldCreateRepository",ParameterValue=$should_create_repository
+               ParameterKey="ShouldCreateRepository",ParameterValue=$should_create_repository \
+               ParameterKey="DeploymentEnvironment",ParameterValue=$deployment_env
 
 result=$?
 

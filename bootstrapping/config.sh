@@ -4,6 +4,9 @@
 # Every resources created on AWS will be named with this prefix.
 # dc = Data (Records) Collection
 project_name="aws-dc-nginx"
+# Deployment environment. Allowed values are: dev, prod.
+# If you deploy this project in development env, all vpc subnets will be public.
+deployment_env="dev"
 # AWS Account Number for this deployment.
 aws_account_id="$(aws sts get-caller-identity --output text --query 'Account')"
 # Project will be deloyed on this region.
@@ -33,10 +36,10 @@ fb_kinesis_stream="$project_name-stream"
 # Fluent Bit cluster instance type/size.
 fb_instance_type="t3.small"
 # Fluent Bit log level. Allowed values are: error, warn, info, debug and trace.
-fb_log_level="info"
+fb_log_level="debug"
 # Fluent Bit instance's key pair name.
-#ec2_instance_key_pair="opalcube-aws-us-west-2-key-pair"
-ec2_instance_key_pair=""
+ec2_instance_key_pair="opalcube-aws-us-west-2-key-pair"
+#ec2_instance_key_pair=""
 # Fluent Bit cluster ASG.
 # The ASG always keep 1 instance in running status. you MUST set max capacity greater than min capacity.
 asg_min_capacity=1

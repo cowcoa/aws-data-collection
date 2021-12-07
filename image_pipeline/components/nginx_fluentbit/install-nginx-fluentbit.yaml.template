@@ -54,6 +54,12 @@ phases:
           commands:
             - 'sudo cp {{ build.GetFBConfigFile.inputs[0].destination }} /etc/td-agent-bit/'
       -
+        name: InstallNgx
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo amazon-linux-extras install nginx1 -y'
+      -
         name: GetNgxConfigFile
         action: S3Download
         inputs:
