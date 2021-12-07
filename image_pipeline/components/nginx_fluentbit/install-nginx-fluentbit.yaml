@@ -1,0 +1,75 @@
+# Install nginx and fluent-bit
+name: Install_Nginx_FluentBit
+description: Install nginx and fluent-bit, update config files on Amazon Linux 2.
+schemaVersion: 1.0
+parameters:
+  - FluentBitRepoFile:
+      type: string
+      default: 's3://aws-dc-nginx-deployment-us-west-2/image-builder/components/nginx-fluentbit/td-agent-bit.repo'
+      description: Url of the fluent bit repo file in s3 bucket.
+  - FluentBitConfigFile:
+      type: string
+      default: 's3://aws-dc-nginx-deployment-us-west-2/image-builder/components/nginx-fluentbit/td-agent-bit.conf'
+      description: Url of the fluent bit config file in s3 bucket.
+  - NginxConfigFile:
+      type: string
+      default: 's3://aws-dc-nginx-deployment-us-west-2/image-builder/components/nginx-fluentbit/nginx.conf'
+      description: Url of the nginx config file in s3 bucket.
+phases:
+  - 
+    name: build
+    steps:
+      - 
+        name: UpdateOS
+        action: UpdateOS
+      -
+        name: GetFBRepoFile
+        action: S3Download
+        inputs:
+          - source: '{{ FluentBitRepoFile }}'
+            destination: /tmp/td-agent-bit.repo
+      -
+        name: EnableFBRepoFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetFBRepoFile.inputs[0].destination }} /etc/yum.repos.d/'
+      -
+        name: InstallFB
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo yum install -y td-agent-bit'
+            - 'sudo yum install -y jq'
+      -
+        name: GetFBConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ FluentBitConfigFile }}'
+            destination: /tmp/td-agent-bit.conf
+      -
+        name: EnableFBConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetFBConfigFile.inputs[0].destination }} /etc/td-agent-bit/'
+      -
+        name: GetNgxConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ NginxConfigFile }}'
+            destination: /tmp/nginx.conf
+      -
+        name: EnableNgxConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetNgxConfigFile.inputs[0].destination }} /etc/nginx/'
+      -
+        name: StartOnBoot
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo systemctl enable td-agent-bit'
+            - 'sudo systemctl enable nginx'
+# Document End

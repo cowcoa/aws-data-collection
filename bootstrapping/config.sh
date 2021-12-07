@@ -3,7 +3,7 @@
 
 # Every resources created on AWS will be named with this prefix.
 # dc = Data (Records) Collection
-project_name="aws-dc"
+project_name="aws-dc-nginx"
 # AWS Account Number for this deployment.
 aws_account_id="$(aws sts get-caller-identity --output text --query 'Account')"
 # Project will be deloyed on this region.
