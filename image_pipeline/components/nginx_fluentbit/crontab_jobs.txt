@@ -1,1 +1,0 @@
-*/1 * * * * /bin/sh /home/ec2-user/environment/aws-data-collection/image_pipeline/components/nginx_fluentbit/nginx_rotate_logs.sh > /tmp/crontab_logs.txt 2>&1

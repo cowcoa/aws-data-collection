@@ -41,14 +41,22 @@ http {
         # Load configuration files for the default server block.
         include /etc/nginx/default.d/*.conf;
 
-        location = /log {
-           access_log  /var/log/nginx/postdata.log  postdata;
-           proxy_pass http://127.0.0.1:MACRO_NGINX_HTTP_PORT/postdata; 
+        location /log {
+            access_log  /var/log/nginx/postdata.log  postdata;
+            proxy_pass http://127.0.0.1:MACRO_NGINX_HTTP_PORT/postdata; 
         }
 
         location = /postdata {
-           access_log off;
-           return 200;
+            access_log off;
+            return 200;
+        }
+        
+        location /health {
+            access_log off;
+            chunked_transfer_encoding off;
+            proxy_buffering off;
+            proxy_read_timeout 1s;
+            proxy_pass http://127.0.0.1:2020/api/v1/health;
         }
     }
 

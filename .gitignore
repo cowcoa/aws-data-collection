@@ -123,3 +123,4 @@ install-fluentbit.yaml
 td-agent-bit.env
 install-nginx-fluentbit.yaml
 nginx.conf
+td-agent-bit.conf
