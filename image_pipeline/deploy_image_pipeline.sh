@@ -141,7 +141,7 @@ if test $result -ne 0; then
     --stack-name $cf_stack_name \
     --change-set-name $cf_change_set_name
 else
-  echo "It's a long-running deployment(for building AMI), please check the stack status from console..."
+  echo "It's a long-running deployment(about 30 minutes for building AMI), please check the stack status from console..."
 fi
 
 if [ -f $output_template_file ]; then

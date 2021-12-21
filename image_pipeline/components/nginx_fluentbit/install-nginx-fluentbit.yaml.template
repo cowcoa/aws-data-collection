@@ -15,6 +15,14 @@ parameters:
       type: string
       default: 's3://MACRO_DEPLOYMENT_BUCKET/image-builder/components/nginx-fluentbit/nginx.conf'
       description: Url of the nginx config file in s3 bucket.
+  - LogrotateConfigFile:
+      type: string
+      default: 's3://MACRO_DEPLOYMENT_BUCKET/image-builder/components/nginx-fluentbit/nginx-logrotate.conf'
+      description: Url of the logrotate config file in s3 bucket.
+  - CrondConfigFile:
+      type: string
+      default: 's3://MACRO_DEPLOYMENT_BUCKET/image-builder/components/nginx-fluentbit/nginx-logrotate-crond.conf'
+      description: Url of the crond config file in s3 bucket.
 phases:
   - 
     name: build
@@ -71,6 +79,31 @@ phases:
         inputs:
           commands:
             - 'sudo cp {{ build.GetNgxConfigFile.inputs[0].destination }} /etc/nginx/'
+      -
+        name: GetLogrttConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ LogrotateConfigFile }}'
+            destination: /tmp/nginx-logrotate.conf
+      -
+        name: EnableLogrttConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetLogrttConfigFile.inputs[0].destination }} /etc/logrotate.d/'
+            - 'sudo rm /etc/logrotate.d/nginx'
+      -
+        name: GetCrondConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ CrondConfigFile }}'
+            destination: /tmp/nginx-logrotate-crond.conf
+      -
+        name: EnableCrondConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetCrondConfigFile.inputs[0].destination }} /etc/cron.d/'
       -
         name: StartOnBoot
         action: ExecuteBash

@@ -90,7 +90,7 @@
 
 [INPUT]
     name tail
-    Path /var/log/nginx/postdata.log
+    path /var/log/nginx/postdata.log
 
 [OUTPUT]
     name   kinesis_streams

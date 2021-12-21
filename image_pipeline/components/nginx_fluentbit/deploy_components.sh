@@ -23,6 +23,10 @@ aws s3 cp "$SHELL_PATH/td-agent-bit.repo" "s3://$s3_deployment_bucket/image-buil
 aws s3 cp "$SHELL_PATH/td-agent-bit.conf" "s3://$s3_deployment_bucket/image-builder/components/nginx-fluentbit/td-agent-bit.conf"
 # Update nginx config file
 aws s3 cp "$SHELL_PATH/nginx.conf" "s3://$s3_deployment_bucket/image-builder/components/nginx-fluentbit/nginx.conf"
+# Update logrotate config file
+aws s3 cp "$SHELL_PATH/nginx-logrotate.conf" "s3://$s3_deployment_bucket/image-builder/components/nginx-fluentbit/nginx-logrotate.conf"
+# Update crond config file
+aws s3 cp "$SHELL_PATH/nginx-logrotate-crond.conf" "s3://$s3_deployment_bucket/image-builder/components/nginx-fluentbit/nginx-logrotate-crond.conf"
 # Upload components document.
 aws s3 cp "$SHELL_PATH/install-nginx-fluentbit.yaml" "s3://$s3_deployment_bucket/image-builder/components/install-nginx-fluentbit.yaml"
 
