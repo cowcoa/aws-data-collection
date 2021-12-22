@@ -15,11 +15,16 @@ events {
 }
 
 http {
+    # https://nginx.org/en/docs/http/ngx_http_core_module.html
     log_format postdata escape=none '{'
-                                      '"http_host":"$http_host",'
+                                      '"host":"$host",'
+                                      '"request_time":"$request_time",'
+                                      '"time_iso8601":"$time_iso8601",'
+                                      '"msec":"$msec",'
                                       '"remote_addr":"$remote_addr",'
                                       '"http_x_forwarded_for":"$http_x_forwarded_for",'
-                                      '"request_length":"$request_length",'
+                                      '"content_type":"$content_type",'
+                                      '"content_length":"$content_length",'
                                       '"request_body":"$request_body"'
                                     '}';
 
@@ -54,7 +59,8 @@ http {
 
         location = /postdata {
             access_log off;
-            return 200;
+            add_header Content-Type text/plain;
+            return 200 '1';
         }
         
         location /health {
