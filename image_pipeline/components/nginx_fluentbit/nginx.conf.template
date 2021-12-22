@@ -15,7 +15,13 @@ events {
 }
 
 http {
-    log_format postdata escape=none '$remote_addr - $http_x_forwarded_for - $request_body';
+    log_format postdata escape=none '{'
+                                      '"http_host":"$http_host",'
+                                      '"remote_addr":"$remote_addr",'
+                                      '"http_x_forwarded_for":"$http_x_forwarded_for",'
+                                      '"request_length":"$request_length",'
+                                      '"request_body":"$request_body"'
+                                    '}';
 
     access_log  /var/log/nginx/access.log  postdata;
 
