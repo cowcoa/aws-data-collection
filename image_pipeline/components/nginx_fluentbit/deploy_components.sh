@@ -15,7 +15,7 @@ sed "s/MACRO_FLUENTBIT_OUTPUT_AWS_REGION/$deployment_region/g; s/MACRO_FLUENTBIT
 
 # Generate nginx config file from template.
 nginx_config_template_file="$SHELL_PATH/nginx.conf"
-sed "s/MACRO_NGINX_HTTP_PORT/$http_port/g" ${nginx_config_template_file}.template > $nginx_config_template_file
+sed "s/MACRO_NGINX_HTTP_PORT/$ec2_http_port/g" ${nginx_config_template_file}.template > $nginx_config_template_file
 
 # Upload fluent-bit repo file
 aws s3 cp "$SHELL_PATH/td-agent-bit.repo" "s3://$s3_deployment_bucket/image-builder/components/nginx-fluentbit/td-agent-bit.repo"

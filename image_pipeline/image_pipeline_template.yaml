@@ -37,7 +37,7 @@ Parameters:
     Type: String
     Description: >
       Image Builder ImageRecipe version.
-  FluentBitInstanceType:
+  EC2InstanceType:
     Default: 't3.small'
     Type: String
     Description: >
@@ -53,11 +53,19 @@ Parameters:
       - 'trace'
     Description: >
       Log level of fluentbit.
-  FluentBitHttpPort:
+  EnableNginx:
+    Default: 'true'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      Enable Nginx or not.
+  EC2HttpPort:
     Default: 3891
     Type: Number
     Description: >
-      Fluent Bit HTTP input plugin's listen port.
+      Fluent Bit HTTP input plugin's listen port on EC2.
   FluentBitHealthCheckPort:
     Default: 2020
     Type: Number
@@ -83,9 +91,23 @@ Parameters:
     Type: Number
     Description: >
       Stack name of VPC used to deploy the following infrastructure.
+  ElbType:
+    Default: 'application'
+    Type: String
+    AllowedValues:
+      - 'application'
+      - 'network'
+    Description: >
+      The type of load balancer.
 Conditions:
   UseKeyPair: 
     !Not [!Equals [!Ref EC2InstanceKeyPair, '']]
+  UseNginx: 
+    !Equals [!Ref EnableNginx, 'true']
+  CreateAlb:
+    !Equals [!Ref ElbType, 'application']
+  CreateNlb:
+    !Equals [!Ref ElbType, 'network']
 Resources:
   IBEC2InstanceProfileRole:
     Type: AWS::IAM::Role
@@ -207,21 +229,21 @@ Resources:
         Fn::ImportValue: !Sub '${BasicStack}-Vpc'
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: !Ref FluentBitHttpPort
-          ToPort: !Ref FluentBitHttpPort
+          FromPort: !Ref EC2HttpPort
+          ToPort: !Ref EC2HttpPort
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: !Ref FluentBitHealthCheckPort
           ToPort: !Ref FluentBitHealthCheckPort
           CidrIp: 0.0.0.0/0
-#        - IpProtocol: tcp
-#          FromPort: 22
-#          ToPort: 22
-#          CidrIp: 0.0.0.0/0
-#        - IpProtocol: icmp
-#          FromPort: -1
-#          ToPort: -1
-#          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: icmp
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: 'Name'
           Value: !Join ['-', [!Ref Prefix, 'fluentbit-sg']]
@@ -236,7 +258,7 @@ Resources:
         IamInstanceProfile: 
           Name: !Ref FluentBitEC2InstanceProfile
         ImageId: !GetAtt FluentBitImage.ImageId
-        InstanceType: !Ref FluentBitInstanceType
+        InstanceType: !Ref EC2InstanceType
         SecurityGroupIds: 
           - !GetAtt FluentBitInstanceSG.GroupId
         BlockDeviceMappings:
@@ -254,15 +276,15 @@ Resources:
       VpcId: 
         Fn::ImportValue: !Sub '${BasicStack}-Vpc'
       HealthCheckEnabled: true
-      HealthCheckPath: '/api/v1/health'
-      HealthCheckPort: !Ref FluentBitHealthCheckPort
+      HealthCheckPath: !If [UseNginx, '/health', '/api/v1/health']
+      HealthCheckPort: !If [UseNginx, !Ref EC2HttpPort, !Ref FluentBitHealthCheckPort]
       HealthCheckProtocol: 'HTTP'
       HealthCheckIntervalSeconds: 10
       HealthCheckTimeoutSeconds: 6
       HealthyThresholdCount: 3
       TargetType: 'instance'
-      Protocol: 'TCP'
-      Port: !Ref FluentBitHttpPort
+      Protocol: !If [CreateAlb, 'HTTP', 'TCP']
+      Port: !Ref EC2HttpPort
   FluentBitAsg:
     Type: AWS::AutoScaling::AutoScalingGroup
     UpdatePolicy:

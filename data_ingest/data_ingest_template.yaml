@@ -53,12 +53,20 @@ Parameters:
     Type: String
     Description: >
       A prefix that Kinesis Data Firehose evaluates and adds to records before writing them to S3.
-  NlbListenerPort:
+  ElbType:
+    Default: 'application'
+    Type: String
+    AllowedValues:
+      - 'application'
+      - 'network'
+    Description: >
+      The type of load balancer.
+  ElbListenerPort:
     Default: 8080
     Type: Number
     Description: >
       Stack name of Image Builder.
-  NlbCertificateArn:
+  ElbCertificateArn:
     Default: 'arn:aws:acm:us-east-1:123:certificate/abc-def'
     Type: String
     Description: >
@@ -77,13 +85,66 @@ Parameters:
     Description: >
       Data records bucket.
 Conditions:
-  UseNlbCertificate:
-    !Not [!Equals [!Ref NlbCertificateArn, '']]
+  UseElbCertificate:
+    !Not [!Equals [!Ref ElbCertificateArn, '']]
   UseAccelerator:
     !Not [!Equals [!Ref EnableAccelerator, 'false']]
+  CreateAlb:
+    !Equals [!Ref ElbType, 'application']
+  CreateNlb:
+    !Equals [!Ref ElbType, 'network']
 Resources:
+  AlbSG:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateAlb
+    Properties:
+      GroupName: !Join ['-', [!Ref Prefix, 'alb-sg']]
+      GroupDescription: 'Enable HTTP access on ALB listener port.'
+      VpcId:
+        Fn::ImportValue: !Sub '${BasicStack}-Vpc'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref ElbListenerPort
+          ToPort: !Ref ElbListenerPort
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: 'Name'
+          Value: !Join ['-', [!Ref Prefix, 'alb-sg']]
+  MyALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Condition: CreateAlb
+    DependsOn:
+      - AlbSG
+    Properties: 
+      Name: !Join ['-', [!Ref Prefix, 'fluentbit-alb']]
+      IpAddressType: 'ipv4'
+      Scheme: 'internet-facing'
+      SecurityGroups:
+        - !GetAtt AlbSG.GroupId
+      Subnets:
+        - Fn::ImportValue:
+            !Sub '${BasicStack}-SubnetA'
+        - Fn::ImportValue:
+            !Sub '${BasicStack}-SubnetB'
+      Type: !Ref ElbType
+  AlbListener:
+    Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Condition: CreateAlb
+    Properties:
+      Certificates:
+        - CertificateArn: !If [UseElbCertificate, !Ref ElbCertificateArn, !Ref 'AWS::NoValue']
+      DefaultActions:
+        - Type: "forward"
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn:
+                  Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitTargetGroup'
+      LoadBalancerArn: !Ref MyALB
+      Port: !Ref ElbListenerPort
+      Protocol: !If [UseElbCertificate, 'HTTPS', 'HTTP']
   MyNLB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Condition: CreateNlb
     Properties: 
       Name: !Join ['-', [!Ref Prefix, 'fluentbit-nlb']]
       IpAddressType: 'ipv4'
@@ -96,9 +157,10 @@ Resources:
       Type: 'network'
   NlbListener:
     Type: "AWS::ElasticLoadBalancingV2::Listener"
+    Condition: CreateNlb
     Properties:
       Certificates:
-        - CertificateArn: !If [UseNlbCertificate, !Ref NlbCertificateArn, !Ref 'AWS::NoValue']
+        - CertificateArn: !If [UseElbCertificate, !Ref ElbCertificateArn, !Ref 'AWS::NoValue']
       DefaultActions:
         - Type: "forward"
           ForwardConfig:
@@ -106,8 +168,8 @@ Resources:
               - TargetGroupArn:
                   Fn::ImportValue: !Sub '${ImagePipelineStack}-FluentBitTargetGroup'
       LoadBalancerArn: !Ref MyNLB
-      Port: !Ref NlbListenerPort
-      Protocol: !If [UseNlbCertificate, 'TLS', 'TCP']
+      Port: !Ref ElbListenerPort
+      Protocol: !If [UseElbCertificate, 'TLS', 'TCP']
   KinesisFirehoseRole:
     Type: AWS::IAM::Role
     Properties:
@@ -164,8 +226,8 @@ Resources:
         Ref: Accelerator
       Protocol: TCP
       PortRanges:
-      - FromPort: !Ref NlbListenerPort
-        ToPort: !Ref NlbListenerPort
+      - FromPort: !Ref ElbListenerPort
+        ToPort: !Ref ElbListenerPort
   EndpointGroup:
     Type: AWS::GlobalAccelerator::EndpointGroup
     Properties:
@@ -175,5 +237,4 @@ Resources:
         Ref: 'AWS::Region'
       TrafficDialPercentage: 100
       EndpointConfigurations:
-      - EndpointId:
-          Ref: MyNLB
+      - EndpointId: !If [CreateNlb, !Ref MyNLB, !Ref MyALB]

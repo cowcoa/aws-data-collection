@@ -78,8 +78,9 @@ aws cloudformation create-change-set \
                ParameterKey="KinesisFirehoseBufferTime",ParameterValue=$kdf_buffer_time \
                ParameterKey="KinesisFirehoseBufferSize",ParameterValue=$kdf_buffer_size \
                ParameterKey="KinesisFirehoseS3Prefix",ParameterValue=$kdf_s3_prefix \
-               ParameterKey="NlbListenerPort",ParameterValue=$nlb_listener_port \
-               ParameterKey="NlbCertificateArn",ParameterValue=$nlb_certificate \
+               ParameterKey="ElbType",ParameterValue=$elb_type \
+               ParameterKey="ElbListenerPort",ParameterValue=$elb_listener_port \
+               ParameterKey="ElbCertificateArn",ParameterValue=$elb_certificate \
                ParameterKey="EnableAccelerator",ParameterValue=$aga_enable \
                ParameterKey="DataRecordsBucket",ParameterValue=$s3_data_records_bucket
 

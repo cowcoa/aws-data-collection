@@ -134,6 +134,7 @@ Resources:
         - 0
         - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock: !Select [ 2, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
+      MapPublicIpOnLaunch: !If [PublicAllSubnets, true, false]
       VpcId: !Ref Vpc
       Tags:
         - Key: 'Name'
@@ -150,6 +151,7 @@ Resources:
         - 1
         - Fn::GetAZs: !Ref 'AWS::Region'
       CidrBlock: !Select [ 3, !Cidr [ !GetAtt Vpc.CidrBlock, 4, 14 ]]
+      MapPublicIpOnLaunch: !If [PublicAllSubnets, true, false]
       VpcId: !Ref Vpc
       Tags:
         - Key: 'Name'
