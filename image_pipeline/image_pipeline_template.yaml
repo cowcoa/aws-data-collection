@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  Image Builder pipeline used to build Fluent Bit pre-installed AMI rg.
+  Image Builder pipeline used to build Fluent Bit pre-installed AMI.
 Parameters:
   Prefix:
     Default: 'poc'
