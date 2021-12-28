@@ -20,6 +20,8 @@ ecr_lambda_consumer_repo="$project_name-lambda-consumer"
 # Lambda consumer image repository URI.
 ecr_lambda_consumer_repo_uri=$aws_account_id.dkr.ecr.$deployment_region.amazonaws.com/$ecr_lambda_consumer_repo
 # Image Builder AWSTOE component version.
+# If you're about to re-build Nginx/FluentBit AMI(after updating config files),
+# you MUST update this version number.
 ib_component_version="1.0.0"
 # Image Builder image recipe version.
 # If you update ib_component_version, you MUST also update this version.
