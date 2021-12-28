@@ -3,7 +3,7 @@
 
 # Every resources created on AWS will be named with this prefix.
 # dc = Data (Records) Collection
-project_name="aws-dc-nginx"
+project_name="rgbitrackerv1"
 # AWS Account Number for this deployment.
 aws_account_id="$(aws sts get-caller-identity --output text --query 'Account')"
 # Deployment environment. Allowed values are: dev, prod.
@@ -40,7 +40,7 @@ ec2_http_port="7891"
 # Fluent Bit cluster instance type/size.
 ec2_instance_type="t3.small"
 # Fluent Bit instance's key pair name.
-ec2_instance_key_pair="opalcube-aws-us-west-2-key-pair"
+ec2_instance_key_pair=""
 # Fluent Bit cluster ASG.
 # The ASG always keep 1 instance in running status. you MUST set max capacity greater than min capacity.
 asg_min_capacity=1
@@ -51,7 +51,7 @@ elb_type="application"
 # ELB's listener port. ELN will forward request from elb_listener_port to ec2_http_port.
 elb_listener_port=8080
 # ELB's ACM certificate that contained custom domain name.
-elb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48a9-80c4-fce59654af3f"
+elb_certificate=""
 # Whether to enable Global Accelerator
 aga_enable="true"
 # Kinesis stream shard count.
