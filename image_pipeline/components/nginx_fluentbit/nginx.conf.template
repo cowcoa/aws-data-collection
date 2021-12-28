@@ -16,7 +16,7 @@ events {
 
 http {
     # https://nginx.org/en/docs/http/ngx_http_core_module.html
-    log_format postdata escape=none '{'
+    log_format postdata escape=json '{'
                                       '"host":"$host",'
                                       '"request_time":"$request_time",'
                                       '"time_iso8601":"$time_iso8601",'

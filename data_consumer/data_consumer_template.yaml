@@ -75,4 +75,4 @@ Resources:
         Fn::GetAtt:
           - "ReadRecordFromKinesis"
           - "Arn"
-      StartingPosition: "TRIM_HORIZON"
+      StartingPosition: "LATEST"
