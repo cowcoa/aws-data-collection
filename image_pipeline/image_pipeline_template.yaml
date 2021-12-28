@@ -23,7 +23,7 @@ Parameters:
     Description: >
       Image Builder AWSTOE component document.
   ComponentVersion:
-    Default: '1.0.0'
+    Default: '1.0.1'
     Type: String
     Description: >
       Image Builder AWSTOE component version.
