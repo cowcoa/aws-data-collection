@@ -11,10 +11,12 @@ aws_account_id="$(aws sts get-caller-identity --output text --query 'Account')"
 deployment_env="dev"
 # Project will be deloyed on this region.
 deployment_region="$(aws ec2 describe-availability-zones --output text --query 'AvailabilityZones[0].[RegionName]')"
+# Add suffix to avoid duplicate bucket names.
+s3_bucket_suffix="${aws_account_id: -4}"
 # S3 bucket for intermediate/temp files during deployment.
-s3_deployment_bucket="$project_name-deployment-$deployment_region"
+s3_deployment_bucket="$project_name-deployment-$deployment_region-$s3_bucket_suffix"
 # S3 bucket for data records storage
-s3_data_records_bucket="$project_name-data-records-$deployment_region"
+s3_data_records_bucket="$project_name-data-records-$deployment_region-$s3_bucket_suffix"
 # Kinesis stream's lambda consumer image repository.
 ecr_lambda_consumer_repo="$project_name-lambda-consumer"
 # Lambda consumer image repository URI.
