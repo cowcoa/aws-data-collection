@@ -37,6 +37,8 @@ fb_kinesis_stream="$project_name-stream"
 fb_log_level="debug"
 # Enable Nginx or not. Allowed values are: true, false.
 nginx_enable="true"
+# ** SKIP Image Builder steps **, and use this AMI to launch EC2 instances.
+ec2_ami_id=""
 # EC2 instance HTTP listen port.
 ec2_http_port="7891"
 # Fluent Bit cluster instance type/size.

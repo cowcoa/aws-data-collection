@@ -89,6 +89,7 @@ aws cloudformation create-change-set \
                ParameterKey="ImageRecipeVersion",ParameterValue=$ib_image_recipe_version \
                ParameterKey="FluentBitLogLevel",ParameterValue=$fb_log_level \
                ParameterKey="EnableNginx",ParameterValue=$nginx_enable \
+               ParameterKey="EC2AmiId",ParameterValue=$ec2_ami_id \
                ParameterKey="EC2InstanceType",ParameterValue=$ec2_instance_type \
                ParameterKey="EC2HttpPort",ParameterValue=$ec2_http_port \
                ParameterKey="EC2InstanceKeyPair",ParameterValue=$ec2_instance_key_pair \

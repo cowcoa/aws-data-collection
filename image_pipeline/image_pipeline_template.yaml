@@ -61,6 +61,11 @@ Parameters:
       - 'false'
     Description: >
       Enable Nginx or not.
+  EC2AmiId:
+    Default: ''
+    Type: String
+    Description: >
+      Skip Image Builder steps, and use this AMI to launch EC2 instances.
   EC2HttpPort:
     Default: 3891
     Type: Number
@@ -108,9 +113,12 @@ Conditions:
     !Equals [!Ref ElbType, 'application']
   CreateNlb:
     !Equals [!Ref ElbType, 'network']
+  BuildAmi:
+    !Equals [!Ref EC2AmiId, '']
 Resources:
   IBEC2InstanceProfileRole:
     Type: AWS::IAM::Role
+    Condition: BuildAmi
     Properties:
       RoleName: !Join ['-', [!Ref Prefix, 'EC2InstanceProfileForImageBuilder', !Ref 'AWS::Region']]
       Description: >
@@ -132,12 +140,14 @@ Resources:
         - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
   IBEC2InstanceProfile: 
       Type: AWS::IAM::InstanceProfile
+      Condition: BuildAmi
       Properties: 
         Path: "/"
         Roles: 
           - !Ref IBEC2InstanceProfileRole
   FluentBitComponent:
     Type: AWS::ImageBuilder::Component
+    Condition: BuildAmi
     Properties: 
       Name: !Join ['-', [!Ref Prefix, 'fluentbit-install']]
       Description: 'Install fluent-bit.'
@@ -147,6 +157,7 @@ Resources:
       Version: !Ref ComponentVersion
   FluentBitImageRecipe:
     Type: AWS::ImageBuilder::ImageRecipe
+    Condition: BuildAmi
     Properties:
       Name: !Join ['-', [!Ref Prefix, 'fluentbit']]
       Description: >
@@ -164,6 +175,7 @@ Resources:
 #            VolumeSize: 100
   InfraConfig:
     Type: AWS::ImageBuilder::InfrastructureConfiguration
+    Condition: BuildAmi
     Properties:
       Name: !Join ['-', [!Ref Prefix, 'common-infra']]
       InstanceProfileName: !Ref IBEC2InstanceProfile
@@ -178,6 +190,7 @@ Resources:
       TerminateInstanceOnFailure: true
   FluentBitDistConfig:
     Type: AWS::ImageBuilder::DistributionConfiguration
+    Condition: BuildAmi
     Properties:
       Name: !Join ['-', [!Ref Prefix, 'fluentbit-dist']]
       Description: >
@@ -190,6 +203,7 @@ Resources:
               'AMI with Fluent Bit(and corresponding config) pre-installed.'
   FluentBitImage:
       Type: AWS::ImageBuilder::Image
+      Condition: BuildAmi
       Properties:
         ImageRecipeArn: !Ref FluentBitImageRecipe
         InfrastructureConfigurationArn: !Ref InfraConfig
@@ -249,15 +263,12 @@ Resources:
           Value: !Join ['-', [!Ref Prefix, 'fluentbit-sg']]
   FluentBitLaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
-    DependsOn:
-      - FluentBitImage
-      - FluentBitInstanceSG
     Properties:
       LaunchTemplateName: !Join ['-', [!Ref Prefix, 'fluentbit-lt']]
       LaunchTemplateData:
         IamInstanceProfile: 
           Name: !Ref FluentBitEC2InstanceProfile
-        ImageId: !GetAtt FluentBitImage.ImageId
+        ImageId: !If [BuildAmi, !GetAtt FluentBitImage.ImageId, !Ref EC2AmiId]
         InstanceType: !Ref EC2InstanceType
         SecurityGroupIds: 
           - !GetAtt FluentBitInstanceSG.GroupId
