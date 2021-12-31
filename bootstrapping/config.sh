@@ -20,10 +20,10 @@ ecr_lambda_consumer_repo="$project_name-lambda-consumer"
 # Lambda consumer image repository URI.
 ecr_lambda_consumer_repo_uri=$aws_account_id.dkr.ecr.$deployment_region.amazonaws.com/$ecr_lambda_consumer_repo
 # Image Builder AWSTOE component version.
-ib_component_version="1.0.1"
+ib_component_version="1.0.2"
 # Image Builder image recipe version.
 # If you update ib_component_version, you MUST also update this version.
-ib_image_recipe_version="1.0.1"
+ib_image_recipe_version="1.0.2"
 # Latest Amazon Linux 2 AMI ID. Base image for image builder.
 ib_amz_linux_2_ami="$(aws ssm get-parameters \
   --names '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' \
@@ -55,7 +55,7 @@ elb_certificate=""
 # Whether to enable Global Accelerator
 aga_enable="true"
 # Kinesis stream shard count.
-kds_shard_count=1
+kds_shard_count=3
 # Kinesis data retention period, unit is Hour. Allowed value range: [24, 8760(365 days)]
 kds_retention_hours=24
 # Kinesis Data Firehose.
