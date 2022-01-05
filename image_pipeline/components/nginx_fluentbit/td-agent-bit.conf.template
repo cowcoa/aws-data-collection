@@ -92,6 +92,7 @@
     name tail
     path /var/log/nginx/postdata.log
     Refresh_Interval  5
+    DB  /var/log/flb_kinesis.db
 
 [OUTPUT]
     name   kinesis_streams
