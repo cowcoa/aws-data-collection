@@ -61,6 +61,7 @@ phases:
         inputs:
           commands:
             - 'sudo cp {{ build.GetFBConfigFile.inputs[0].destination }} /etc/td-agent-bit/'
+            - 'sudo mkdir -p /var/log/fluentbit/'
       -
         name: InstallNgx
         action: ExecuteBash

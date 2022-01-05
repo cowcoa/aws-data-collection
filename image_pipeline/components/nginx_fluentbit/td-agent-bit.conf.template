@@ -2,7 +2,7 @@
     # Flush
     # =====
     # set an interval of seconds before to flush records to a destination
-    flush        5
+    flush        1
 
     # Daemon
     # ======
@@ -89,8 +89,10 @@
     hc_period              10
 
 [INPUT]
-    name tail
-    path /var/log/nginx/postdata.log
+    name             tail
+    path             /var/log/nginx/postdata.log
+    db               /var/log/fluentbit/logs.db
+    rotate_wait      1
 
 [OUTPUT]
     name   kinesis_streams
