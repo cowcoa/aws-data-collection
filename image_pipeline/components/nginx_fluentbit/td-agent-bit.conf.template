@@ -91,6 +91,8 @@
 [INPUT]
     name tail
     path /var/log/nginx/postdata.log
+    Mem_Buf_Limit  5MB
+    Refresh_Interval  10
 
 [OUTPUT]
     name   kinesis_streams
