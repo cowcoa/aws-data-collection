@@ -70,6 +70,10 @@ http {
             proxy_read_timeout 1s;
             proxy_pass http://127.0.0.1:2020/api/v1/health;
         }
+
+        location /health_debug {
+            return 200;
+        }
     }
 
 # Settings for a TLS enabled server.

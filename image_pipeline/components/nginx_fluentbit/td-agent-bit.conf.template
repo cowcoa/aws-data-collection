@@ -93,6 +93,9 @@
     path             /var/log/nginx/postdata.log
     db               /var/log/fluentbit/logs.db
     rotate_wait      1
+    refresh_interval 1
+    read_from_head   true
+    mem_buf_limit    3000k
 
 [OUTPUT]
     name   kinesis_streams
