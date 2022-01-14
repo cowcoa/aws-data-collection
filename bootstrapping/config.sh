@@ -62,6 +62,8 @@ elb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48
 aga_enable="true"
 # Kinesis stream shard count.
 kds_shard_count=1
+# Kinesis stream mode. Allowed values are: ON_DEMAND, PROVISIONED
+kds_stream_mode="ON_DEMAND"
 # Kinesis data retention period, unit is Hour. Allowed value range: [24, 8760(365 days)]
 kds_retention_hours=24
 # Kinesis Data Firehose.

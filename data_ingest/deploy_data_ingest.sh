@@ -74,6 +74,7 @@ aws cloudformation create-change-set \
                ParameterKey="ImagePipelineStack",ParameterValue="$project_name-image-pipeline" \
                ParameterKey="KinesisStreamName",ParameterValue=$fb_kinesis_stream \
                ParameterKey="KinesisStreamShardCount",ParameterValue=$kds_shard_count \
+               ParameterKey="KinesisStreamMode",ParameterValue=$kds_stream_mode \
                ParameterKey="KinesisStreamRetentionHours",ParameterValue=$kds_retention_hours \
                ParameterKey="KinesisFirehoseBufferTime",ParameterValue=$kdf_buffer_time \
                ParameterKey="KinesisFirehoseBufferSize",ParameterValue=$kdf_buffer_size \

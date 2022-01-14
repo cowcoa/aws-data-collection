@@ -27,6 +27,11 @@ Parameters:
     Type: Number
     Description: >
       Stack name of Image Builder.
+  KinesisStreamMode:
+    Default: ON_DEMAND
+    Type: String
+    Description: >
+      Specifies the capacity mode to which you want to set your data stream.
   KinesisStreamRetentionHours:
     Default: 24
     Type: Number
@@ -195,6 +200,8 @@ Resources:
           Name: !Ref KinesisStreamName 
           RetentionPeriodHours: !Ref KinesisStreamRetentionHours
           ShardCount: !Ref KinesisStreamShardCount
+          StreamModeDetails:
+            StreamMode: !Ref KinesisStreamMode
   Deliverystream: 
     Type: AWS::KinesisFirehose::DeliveryStream
     DependsOn:
