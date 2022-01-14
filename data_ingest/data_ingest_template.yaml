@@ -98,6 +98,8 @@ Conditions:
     !Equals [!Ref ElbType, 'application']
   CreateNlb:
     !Equals [!Ref ElbType, 'network']
+  ProvisionedKdsMode:
+    !Equals [!Ref KinesisStreamMode, 'PROVISIONED']
 Resources:
   AlbSG:
     Type: AWS::EC2::SecurityGroup
@@ -199,7 +201,7 @@ Resources:
       Properties: 
           Name: !Ref KinesisStreamName 
           RetentionPeriodHours: !Ref KinesisStreamRetentionHours
-          ShardCount: !Ref KinesisStreamShardCount
+          ShardCount: !If [ProvisionedKdsMode, !Ref KinesisStreamShardCount, !Ref 'AWS::NoValue']
           StreamModeDetails:
             StreamMode: !Ref KinesisStreamMode
   Deliverystream: 
