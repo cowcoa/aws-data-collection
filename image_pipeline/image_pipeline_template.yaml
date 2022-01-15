@@ -28,8 +28,8 @@ Parameters:
     Description: >
       Image Builder AWSTOE component version.
   ImageRecipeParentAmiId:
-    Default: 'ami-12345'
-    Type: String
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Description: >
       Base AMI of this building target.
   ImageRecipeVersion:
@@ -182,7 +182,7 @@ Resources:
       Description: >
         'Common infrastructure configure used to build AMI.'
       InstanceTypes:
-        - 'm5.large'
+        - !Ref EC2InstanceType
       Logging:
         S3Logs:
           S3BucketName: !Ref DeploymentBucket

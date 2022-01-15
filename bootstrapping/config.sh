@@ -29,10 +29,8 @@ ib_component_version="1.0.0"
 # If you update ib_component_version, you MUST also update this version.
 ib_image_recipe_version="1.0.0"
 # Latest Amazon Linux 2 AMI ID. Base image for image builder.
-ib_amz_linux_2_ami="$(aws ssm get-parameters \
-  --names '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2' \
-  --query 'Parameters[0].[Value]' \
-  --output text)"
+# ib_amz_linux_2_ami="/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2"
+ib_amz_linux_2_ami="/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2"
 # Kinesis stream ouput plugin, kinesis data stream name.
 fb_kinesis_stream="$project_name-stream"
 # Fluent Bit log level. Allowed values are: error, warn, info, debug and trace.
@@ -44,7 +42,7 @@ ec2_ami_id=""
 # EC2 instance HTTP listen port.
 ec2_http_port="7891"
 # Fluent Bit cluster instance type/size.
-ec2_instance_type="t3.small"
+ec2_instance_type="m6g.medium"
 # Fluent Bit instance's key pair name.
 ec2_instance_key_pair="opalcube-aws-us-west-2-key-pair"
 # Fluent Bit cluster ASG.
