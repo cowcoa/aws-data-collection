@@ -57,7 +57,7 @@ asg_desired_capacity=1
 # The type of load balancer. Allowed values are: application, network
 elb_type="application"
 # ELB's listener port. ELB will forward request from elb_listener_port to ec2_http_port.
-elb_listener_port=8080
+elb_listener_port=80
 # ELB's ACM certificate that contained custom domain name.
 # If you just want to use HTTP protocal, leave this config variable to empty.
 elb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48a9-80c4-fce59654af3f"
