@@ -27,6 +27,11 @@ Parameters:
     Type: Number
     Description: >
       Stack name of Image Builder.
+  KinesisStreamMode:
+    Default: ON_DEMAND
+    Type: String
+    Description: >
+      Specifies the capacity mode to which you want to set your data stream.
   KinesisStreamRetentionHours:
     Default: 24
     Type: Number
@@ -93,6 +98,8 @@ Conditions:
     !Equals [!Ref ElbType, 'application']
   CreateNlb:
     !Equals [!Ref ElbType, 'network']
+  ProvisionedKdsMode:
+    !Equals [!Ref KinesisStreamMode, 'PROVISIONED']
 Resources:
   AlbSG:
     Type: AWS::EC2::SecurityGroup
@@ -194,7 +201,9 @@ Resources:
       Properties: 
           Name: !Ref KinesisStreamName 
           RetentionPeriodHours: !Ref KinesisStreamRetentionHours
-          ShardCount: !Ref KinesisStreamShardCount
+          ShardCount: !If [ProvisionedKdsMode, !Ref KinesisStreamShardCount, !Ref 'AWS::NoValue']
+          StreamModeDetails:
+            StreamMode: !Ref KinesisStreamMode
   Deliverystream: 
     Type: AWS::KinesisFirehose::DeliveryStream
     DependsOn:

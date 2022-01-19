@@ -27,6 +27,7 @@ SHELL_PATH=$(cd "$(dirname "$0")";pwd)
 # Execute components deployment first.
 $SHELL_PATH/components/fluentbit/deploy_components.sh
 $SHELL_PATH/components/nginx_fluentbit/deploy_components.sh
+$SHELL_PATH/components/nginx_aka/deploy_components.sh
 # Import global variables
 source $SHELL_PATH/../bootstrapping/config.sh
 
@@ -70,7 +71,11 @@ component_doc_uri=""
 if [ nginx_enable = false ]; then
   component_doc_uri="s3://$s3_deployment_bucket/image-builder/components/install-fluentbit.yaml"
 else
-  component_doc_uri="s3://$s3_deployment_bucket/image-builder/components/install-nginx-fluentbit.yaml"
+  if [ aka_enable = false ]; then
+    component_doc_uri="s3://$s3_deployment_bucket/image-builder/components/install-nginx-fluentbit.yaml"
+  else
+    component_doc_uri="s3://$s3_deployment_bucket/image-builder/components/install-nginx-aka.yaml"
+  fi
 fi
 
 echo "Creating change set..."
@@ -89,6 +94,8 @@ aws cloudformation create-change-set \
                ParameterKey="ImageRecipeVersion",ParameterValue=$ib_image_recipe_version \
                ParameterKey="FluentBitLogLevel",ParameterValue=$fb_log_level \
                ParameterKey="EnableNginx",ParameterValue=$nginx_enable \
+               ParameterKey="EnableAka",ParameterValue=$aka_enable \
+               ParameterKey="EC2AmiId",ParameterValue=$ec2_ami_id \
                ParameterKey="EC2InstanceType",ParameterValue=$ec2_instance_type \
                ParameterKey="EC2HttpPort",ParameterValue=$ec2_http_port \
                ParameterKey="EC2InstanceKeyPair",ParameterValue=$ec2_instance_key_pair \

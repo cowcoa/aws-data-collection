@@ -124,3 +124,5 @@ td-agent-bit.env
 install-nginx-fluentbit.yaml
 nginx.conf
 td-agent-bit.conf
+install-nginx-aka.yaml
+kinesis-agent.json

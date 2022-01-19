@@ -1,0 +1,99 @@
+# Install Nginx and AWS Kinesis Agent
+name: Install_Nginx_AKA
+description: Install Nginx and AWS Kinesis Agent, update config files on Amazon Linux 2.
+schemaVersion: 1.0
+parameters:
+  - KinesisAgentConfigFile:
+      type: string
+      default: 's3://MACRO_DEPLOYMENT_BUCKET/image-builder/components/nginx-aka/kinesis-agent.json'
+      description: Url of the kinesis agent config file in s3 bucket.
+  - NginxConfigFile:
+      type: string
+      default: 's3://MACRO_DEPLOYMENT_BUCKET/image-builder/components/nginx-aka/nginx.conf'
+      description: Url of the nginx config file in s3 bucket.
+  - LogrotateConfigFile:
+      type: string
+      default: 's3://MACRO_DEPLOYMENT_BUCKET/image-builder/components/nginx-aka/nginx-logrotate.conf'
+      description: Url of the logrotate config file in s3 bucket.
+  - CrondConfigFile:
+      type: string
+      default: 's3://MACRO_DEPLOYMENT_BUCKET/image-builder/components/nginx-aka/nginx-logrotate-crond.conf'
+      description: Url of the crond config file in s3 bucket.
+phases:
+  - 
+    name: build
+    steps:
+      - 
+        name: UpdateOS
+        action: UpdateOS
+      -
+        name: InstallAKA
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo yum install -y aws-kinesis-agent'
+      -
+        name: GetAKAConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ KinesisAgentConfigFile }}'
+            destination: /tmp/kinesis-agent.json
+      -
+        name: EnableAKAConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetAKAConfigFile.inputs[0].destination }} /etc/aws-kinesis/agent.json'
+      -
+        name: InstallNgx
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo amazon-linux-extras install nginx1 -y'
+            - 'sudo mkdir -p /var/log/nginx/'
+            - 'sudo chmod -R 755 /var/log/nginx/'
+      -
+        name: GetNgxConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ NginxConfigFile }}'
+            destination: /tmp/nginx.conf
+      -
+        name: EnableNgxConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetNgxConfigFile.inputs[0].destination }} /etc/nginx/'
+      -
+        name: GetLogrttConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ LogrotateConfigFile }}'
+            destination: /tmp/nginx-logrotate.conf
+      -
+        name: EnableLogrttConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetLogrttConfigFile.inputs[0].destination }} /etc/logrotate.d/'
+            - 'sudo rm /etc/logrotate.d/nginx'
+      -
+        name: GetCrondConfigFile
+        action: S3Download
+        inputs:
+          - source: '{{ CrondConfigFile }}'
+            destination: /tmp/nginx-logrotate-crond.conf
+      -
+        name: EnableCrondConfigFile
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo cp {{ build.GetCrondConfigFile.inputs[0].destination }} /etc/cron.d/'
+      -
+        name: StartOnBoot
+        action: ExecuteBash
+        inputs:
+          commands:
+            - 'sudo systemctl enable aws-kinesis-agent'
+            - 'sudo systemctl enable nginx'
+# Document End
