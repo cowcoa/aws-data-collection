@@ -61,6 +61,14 @@ Parameters:
       - 'false'
     Description: >
       Enable Nginx or not.
+  EnableAka:
+    Default: 'true'
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      Enable AWS Kinesis Agent or not.
   EC2AmiId:
     Default: ''
     Type: String
@@ -109,6 +117,8 @@ Conditions:
     !Not [!Equals [!Ref EC2InstanceKeyPair, '']]
   UseNginx: 
     !Equals [!Ref EnableNginx, 'true']
+  UseAka: 
+    !Equals [!Ref EnableAka, 'true']
   CreateAlb:
     !Equals [!Ref ElbType, 'application']
   CreateNlb:
@@ -198,9 +208,9 @@ Resources:
       Distributions:
         - Region: !Ref AWS::Region
           AmiDistributionConfiguration:
-            Name: !Join ['-', [!Ref Prefix, 'fluentbit', !Ref FluentBitLogLevel, '{{ imagebuilder:buildDate }}']] 
+            Name: !If [UseAka, !Join ['-', [!Ref Prefix, 'kinesisagent', '{{ imagebuilder:buildDate }}']], !Join ['-', [!Ref Prefix, 'fluentbit', !Ref FluentBitLogLevel, '{{ imagebuilder:buildDate }}']]] 
             Description: >
-              'AMI with Fluent Bit(and corresponding config) pre-installed.'
+              'AMI with KDS producer (and corresponding config) pre-installed.'
   FluentBitImage:
       Type: AWS::ImageBuilder::Image
       Condition: BuildAmi
@@ -228,6 +238,7 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
         - 'arn:aws:iam::aws:policy/AmazonKinesisFullAccess'
+        - 'arn:aws:iam::aws:policy/CloudWatchFullAccess'
   FluentBitEC2InstanceProfile: 
       Type: "AWS::IAM::InstanceProfile"
       Properties: 

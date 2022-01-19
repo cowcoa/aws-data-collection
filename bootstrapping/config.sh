@@ -79,5 +79,7 @@ kdf_buffer_time=60
 kdf_buffer_size=1
 # A prefix that Kinesis Data Firehose evaluates and adds to records before writing them to S3.
 kdf_s3_prefix='aws'
+# Enable AWS Kinesis Agent or not. Allowed values are: true, false.
+aka_enable="true"
 
 echo "config.sh imported."
