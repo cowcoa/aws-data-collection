@@ -1,10 +1,10 @@
 {
     "cloudwatch.emitMetrics": true,
     "cloudwatch.endpoint": "monitoring.MACRO_DEPLOYMENT_REGION.amazonaws.com",
-    "kinesis.endpoint": "kinesis.MACRO_DEPLOYMENT_REGION.amazonaws.com", 
+    "kinesis.endpoint": "kinesis.MACRO_DEPLOYMENT_REGION.amazonaws.com",
     "flows": [
         {
-            "filePattern": "/var/log/nginx/postdata.log", 
+            "filePattern": "/var/log/nginx/postdata.log*",
             "kinesisStream": "MACRO_KINESIS_STREAM_NAME",
             "initialPosition": "START_OF_FILE",
             "maxBufferAgeMillis": 30000,
@@ -13,5 +13,5 @@
             "minTimeBetweenFilePollsMillis": 500,
             "partitionKeyOption": "RANDOM"
         }
-    ] 
+    ]
 }
