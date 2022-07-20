@@ -5,7 +5,7 @@ i=1
 generate_post_data()
 {
 cat <<EOF
-{"id":$i,"login":"cow","password":"123"}
+{"id":$i,"login":"cow","password":"123111"}
 EOF
 }
 

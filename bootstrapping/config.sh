@@ -3,7 +3,7 @@
 
 # Every resources created on AWS will be named with this prefix.
 # dc = Data (Records) Collection
-project_name="aws-dc-nginx"
+project_name="rgbitrackerv1"
 # AWS Account Number for this deployment.
 aws_account_id="$(aws sts get-caller-identity --output text --query 'Account')"
 # Deployment environment. Allowed values are: dev, prod.
@@ -48,7 +48,7 @@ ec2_http_port="7891"
 ec2_instance_type="m6g.medium"
 # Fluent Bit instance's key pair name.
 # If you don't want to specify a key pair, leave this variable to empty.
-ec2_instance_key_pair="opalcube-aws-us-west-2-key-pair"
+ec2_instance_key_pair="opalcube-aws-us-west-1-key-pair"
 # Fluent Bit cluster ASG.
 # The ASG always keep 1 instance in running status. you MUST set max capacity greater than min capacity.
 asg_min_capacity=1
@@ -57,14 +57,14 @@ asg_desired_capacity=1
 # The type of load balancer. Allowed values are: application, network
 elb_type="application"
 # ELB's listener port. ELB will forward request from elb_listener_port to ec2_http_port.
-elb_listener_port=80
+elb_listener_port=443
 # ELB's ACM certificate that contained custom domain name.
 # If you just want to use HTTP protocal, leave this config variable to empty.
-elb_certificate="arn:aws:acm:us-west-2:027226252545:certificate/9135d3b4-dfc3-48a9-80c4-fce59654af3f"
-# Whether to enable Global Accelerator.
+elb_certificate=""
+# Whether to enable Global Accelerator
 aga_enable="true"
 # Kinesis stream mode. Allowed values are: ON_DEMAND, PROVISIONED
-kds_stream_mode="ON_DEMAND"
+kds_stream_mode="PROVISIONED"
 # Kinesis stream shard count.
 # Only valid when kds_stream_mode is PROVISIONED.
 kds_shard_count=1
